@@ -1600,7 +1600,7 @@ class SparkContext(config: SparkConf) extends Logging {
   def killExecutorsLambda(executorIds: Seq[String]): Boolean = {
     schedulerBackend match {
       case b: CoarseGrainedSchedulerBackendLambda =>
-        b.killExecutorsLambda(executorIds, replace = false, force = true).nonEmpty
+        b.killExecutors(executorIds, replace = false, force = true).nonEmpty
       case _ =>
         logWarning("Killing executors is only supported in coarse-grained mode")
         false
