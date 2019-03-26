@@ -268,6 +268,7 @@ private[spark] class LambdaSchedulerBackend(
   final def doRequestTotalExecutors_lambda(requestedTotal: Int): Future[Boolean] = {
     // TODO: Check again against numExecutorsExpected ??
     // We assume that all pending lambda calls are live lambdas and are fine
+    logInfo("AMAN: Function call in doRequestTotalExecutors_lambda")
     val newExecutorsNeeded = requestedTotal - numLambdaCallsPending.get()
     logDebug(s"LAMBDA: 9001: doRequestTotalExecutors: ${newExecutorsNeeded} = " +
       s"${requestedTotal} - ${numLambdaCallsPending.get}")

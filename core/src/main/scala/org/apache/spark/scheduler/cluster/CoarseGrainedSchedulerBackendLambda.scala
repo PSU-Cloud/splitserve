@@ -530,12 +530,13 @@ class CoarseGrainedSchedulerBackendLambda(scheduler: TaskSchedulerImpl, val rpcE
    *                             This includes running, pending, and completed tasks.
    * @return whether the request is acknowledged by the cluster manager.
    */
-  final override def requestTotalExecutorsLambda(
+  override final def requestTotalExecutorsLambda(
       numExecutors: Int,
       localityAwareTasks: Int,
       hostToLocalTaskCount: Map[String, Int]
     ): Boolean = {
     logDebug("LAMBDA: 7010: CoarseGrainedSchedulerBackendLambda")
+    logInfo("AMAN: Got in requestTotalExecutorsLambda function")
     if (numExecutors < 0) {
       throw new IllegalArgumentException(
         "Attempted to request a negative number of executor(s) " +

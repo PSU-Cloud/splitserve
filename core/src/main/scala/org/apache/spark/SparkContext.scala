@@ -52,7 +52,7 @@ import org.apache.spark.partial.{ApproximateEvaluator, PartialResult}
 import org.apache.spark.rdd._
 import org.apache.spark.rpc.RpcEndpointRef
 import org.apache.spark.scheduler._
-import org.apache.spark.scheduler.cluster.{CoarseGrainedSchedulerBackend, StandaloneSchedulerBackend}
+import org.apache.spark.scheduler.cluster.{CoarseGrainedSchedulerBackendLambda, CoarseGrainedSchedulerBackend, StandaloneSchedulerBackend}
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
 import org.apache.spark.storage._
 import org.apache.spark.storage.BlockManagerMessages.TriggerThreadDump
@@ -1528,6 +1528,23 @@ class SparkContext(config: SparkConf) extends Logging {
     }
   }
 
+ //AMAN_ATA: Adding Lambda version of API
+
+   @DeveloperApi
+  def requestTotalExecutorsLambda(
+      numExecutors: Int,
+      localityAwareTasks: Int,
+      hostToLocalTaskCount: scala.collection.immutable.Map[String, Int]
+    ): Boolean = {
+    schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackendLambda =>
+        b.requestTotalExecutorsLambda(numExecutors, localityAwareTasks, hostToLocalTaskCount)
+      case _ =>
+        logWarning("Requesting executors is only supported in coarse-grained mode")
+        false
+    }
+}
+
   /**
    * :: DeveloperApi ::
    * Request an additional number of executors from the cluster manager.
@@ -1538,6 +1555,18 @@ class SparkContext(config: SparkConf) extends Logging {
     schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
         b.requestExecutors(numAdditionalExecutors)
+      case _ =>
+        logWarning("Requesting executors is only supported in coarse-grained mode")
+        false
+    }
+  }
+
+  //AMAN_ATA: Adding Lambda version of function
+  @DeveloperApi
+  def requestExecutorsLambda(numAdditionalExecutors: Int): Boolean = {
+    schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackendLambda =>
+        b.requestExecutorsLambda(numAdditionalExecutors)
       case _ =>
         logWarning("Requesting executors is only supported in coarse-grained mode")
         false
@@ -1566,6 +1595,19 @@ class SparkContext(config: SparkConf) extends Logging {
     }
   }
 
+  //AMAN_ATA: Adding Lambda version of function
+  @DeveloperApi
+  def killExecutorsLambda(executorIds: Seq[String]): Boolean = {
+    schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackendLambda =>
+        b.killExecutorsLambda(executorIds, replace = false, force = true).nonEmpty
+      case _ =>
+        logWarning("Killing executors is only supported in coarse-grained mode")
+        false
+    }
+  }
+ 
+
   /**
    * :: DeveloperApi ::
    * Request that the cluster manager kill the specified executor.
@@ -1579,6 +1621,10 @@ class SparkContext(config: SparkConf) extends Logging {
    */
   @DeveloperApi
   def killExecutor(executorId: String): Boolean = killExecutors(Seq(executorId))
+
+  //AMAN_ATA: Adding Lambda version function
+  @DeveloperApi
+  def killExecutorLambda(executorId: String): Boolean = killExecutorsLambda(Seq(executorId))
 
   /**
    * Request that the cluster manager kill the specified executor without adjusting the

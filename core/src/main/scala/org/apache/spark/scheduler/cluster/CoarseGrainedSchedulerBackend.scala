@@ -641,6 +641,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
       numExecutors: Int,
       localityAwareTasks: Int,
       hostToLocalTaskCount: Map[String, Int]): Boolean = { 
+      logInfo("AMAN: Dummy function requestTotalExecutorsLambda being called")
       val temp: Boolean = true
       temp } 
 
