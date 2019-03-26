@@ -222,6 +222,11 @@ private[spark] trait SparkListenerInterface {
    */
   def onUnpersistRDD(unpersistRDD: SparkListenerUnpersistRDD): Unit
 
+ /**
+  * Called when the driver gets Lambda related details from a new executor.
+  */
+  def onExecutorLambdaDetails(executorLambdaDetails: SparkListenerExecutorLambdaDetails): Unit
+
   /**
    * Called when the application starts
    */
@@ -299,6 +304,9 @@ abstract class SparkListener extends SparkListenerInterface {
       executorMetricsUpdate: SparkListenerExecutorMetricsUpdate): Unit = { }
 
   override def onExecutorAdded(executorAdded: SparkListenerExecutorAdded): Unit = { }
+
+   override def onExecutorLambdaDetails(
+            executorLambdaDetails: SparkListenerExecutorLambdaDetails): Unit = { }
 
   override def onExecutorRemoved(executorRemoved: SparkListenerExecutorRemoved): Unit = { }
 
