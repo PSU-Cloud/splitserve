@@ -43,7 +43,8 @@ private[spark] class CoarseGrainedExecutorBackend(
     hostname: String,
     cores: Int,
     userClassPath: Seq[URL],
-    env: SparkEnv)
+    env: SparkEnv,
+    executorType: String)
   extends ThreadSafeRpcEndpoint with ExecutorBackend with Logging {
 
   private[this] val stopping = new AtomicBoolean(false)
@@ -68,6 +69,26 @@ private[spark] class CoarseGrainedExecutorBackend(
         exitExecutor(1, s"Cannot register with driver: $driverUrl", e, notifyDriver = false)
     }(ThreadUtils.sameThread)
   }
+
+//AMAN: Adding Lambda support for when the executor is launched in a Lambda
+
+  try {
+    val requestId = env.conf.get("spark.lambda.awsRequestId")
+    val logGroupName = env.conf.get("spark.lambda.logGroupName")
+    val logStreamName = env.conf.get("spark.lambda.logStreamName")
+    rpcEnv.asyncSetupEndpointRefByURI(driverUrl).flatMap { ref =>
+      // This is a very fast action so we can use "ThreadUtils.sameThread"
+      driver = Some(ref)
+      val request = LambdaDetails(executorId, requestId, logGroupName, logStreamName)
+      ref.ask[Boolean](request)
+    }(ThreadUtils.sameThread).onComplete {
+      // This is a very fast action so we can use "ThreadUtils.sameThread"
+      case Success(msg) =>
+      // Always receive `true`. Just ignore it
+      case Failure(e) =>
+        exitExecutor(1, s"Cannot send Lambda details to driver: $driverUrl", e,
+          notifyDriver = false)
+}(ThreadUtils.sameThread) } catch { case e: NoSuchElementException => logInfo("AMAN: Not a Lambda executor") }
 
   def extractLogUrls: Map[String, String] = {
     val prefix = "SPARK_LOG_URL_"
@@ -172,18 +193,30 @@ private[spark] class CoarseGrainedExecutorBackend(
   }
 }
 
+//AMAN: adding function definition stype of Lambda, note hostnameInput in argument
 private[spark] object CoarseGrainedExecutorBackend extends Logging {
 
   private def run(
       driverUrl: String,
       executorId: String,
-      hostname: String,
+      hostnameInput: String,
       cores: Int,
       appId: String,
       workerUrl: Option[String],
       userClassPath: Seq[URL]) {
 
     Utils.initDaemon(log)
+     val hostname: String = if (hostnameInput == "LAMBDA") {
+      Utils.localHostName
+      } else {
+      hostnameInput
+      }
+      logDebug(s"LAMBDA: 2.1: $hostname")
+      logDebug(s"LAMBDA: 2.2: $hostname")
+      SparkHadoopUtil.get.runAsSparkUser { () =>
+        logDebug(s"LAMBDA: 2.3")
+      }
+    logDebug(s"LAMBDA: 2.4")
 
     SparkHadoopUtil.get.runAsSparkUser { () =>
       // Debug code
@@ -221,10 +254,10 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       }
 
       val env = SparkEnv.createExecutorEnv(
-        driverConf, executorId, hostname, port, cores, cfg.ioEncryptionKey, isLocal = false)
+        driverConf, executorId, hostname, port, cores, cfg.ioEncryptionKey, isLocal = false, executorType)
 
       env.rpcEnv.setupEndpoint("Executor", new CoarseGrainedExecutorBackend(
-        env.rpcEnv, driverUrl, executorId, hostname, cores, userClassPath, env))
+        env.rpcEnv, driverUrl, executorId, hostname, cores, userClassPath, env, executorType))
       workerUrl.foreach { url =>
         env.rpcEnv.setupEndpoint("WorkerWatcher", new WorkerWatcher(env.rpcEnv, url))
       }
@@ -241,6 +274,8 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
     var appId: String = null
     var workerUrl: Option[String] = None
     val userClassPath = new mutable.ListBuffer[URL]()
+    //AMAN: Adding executor type
+    val executorType: String = null
 
     var argv = args.toList
     while (!argv.isEmpty) {
@@ -267,6 +302,9 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         case ("--user-class-path") :: value :: tail =>
           userClassPath += new URL(value)
           argv = tail
+        case ("--executor-type") :: value ::tail =>
+	  executorType = value
+          argv = tail
         case Nil =>
         case tail =>
           // scalastyle:off println
@@ -277,11 +315,11 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
     }
 
     if (driverUrl == null || executorId == null || hostname == null || cores <= 0 ||
-      appId == null) {
+      appId == null || executorType == null) {
       printUsageAndExit()
     }
 
-    run(driverUrl, executorId, hostname, cores, appId, workerUrl, userClassPath)
+    run(driverUrl, executorId, hostname, cores, appId, workerUrl, userClassPath, executorType)
     System.exit(0)
   }
 
@@ -299,6 +337,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       |   --app-id <appid>
       |   --worker-url <workerUrl>
       |   --user-class-path <url>
+      |   --executor-type <VM/LAMBDA>
       |""".stripMargin)
     // scalastyle:on println
     System.exit(1)

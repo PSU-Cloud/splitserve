@@ -180,6 +180,7 @@ object SparkEnv extends Logging {
       isLocal,
       numCores,
       ioEncryptionKey,
+      null,
       listenerBus = listenerBus,
       mockOutputCommitCoordinator = mockOutputCommitCoordinator
     )
@@ -196,7 +197,8 @@ object SparkEnv extends Logging {
       port: Int,
       numCores: Int,
       ioEncryptionKey: Option[Array[Byte]],
-      isLocal: Boolean): SparkEnv = {
+      isLocal: Boolean,
+      executorType: String): SparkEnv = {
     val env = create(
       conf,
       executorId,
@@ -205,7 +207,8 @@ object SparkEnv extends Logging {
       port,
       isLocal,
       numCores,
-      ioEncryptionKey
+      ioEncryptionKey,
+      executorType
     )
     SparkEnv.set(env)
     env
@@ -223,6 +226,7 @@ object SparkEnv extends Logging {
       isLocal: Boolean,
       numUsableCores: Int,
       ioEncryptionKey: Option[Array[Byte]],
+      executorType: String = null,
       listenerBus: LiveListenerBus = null,
       mockOutputCommitCoordinator: Option[OutputCommitCoordinator] = None): SparkEnv = {
 
