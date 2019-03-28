@@ -1522,7 +1522,7 @@ class SparkContext(config: SparkConf) extends Logging {
     ): Boolean = {
     schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
-        b.requestTotalExecutors(numExecutors, localityAwareTasks, hostToLocalTaskCount)
+        b.requestTotalExecutors(numExecutors, localityAwareTasks, hostToLocalTaskCount, "VM")
       case _ =>
         logWarning("Requesting executors is only supported in coarse-grained mode")
         false
@@ -1555,7 +1555,7 @@ class SparkContext(config: SparkConf) extends Logging {
   def requestExecutors(numAdditionalExecutors: Int): Boolean = {
     schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
-        b.requestExecutors(numAdditionalExecutors)
+        b.requestExecutors(numAdditionalExecutors, "VM")
       case _ =>
         logWarning("Requesting executors is only supported in coarse-grained mode")
         false

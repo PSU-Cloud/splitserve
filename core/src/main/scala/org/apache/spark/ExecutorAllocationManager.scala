@@ -236,7 +236,7 @@ private[spark] class ExecutorAllocationManager(
     }
     executor.scheduleWithFixedDelay(scheduleTask, 0, intervalMillis, TimeUnit.MILLISECONDS)
 
-    client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount)
+    client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
   }
 
   /**
@@ -330,7 +330,7 @@ private[spark] class ExecutorAllocationManager(
       // If the new target has not changed, avoid sending a message to the cluster manager
       if (numExecutorsTarget < oldNumExecutorsTarget) {
         logInfo("AMAN: UpdateAndSync Called within SECOND IF")
-        client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount)
+        client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
         logDebug(s"Lowering target number of executors to $numExecutorsTarget (previously " +
           s"$oldNumExecutorsTarget) because not all requested executors are actually needed")
       }
@@ -387,7 +387,7 @@ private[spark] class ExecutorAllocationManager(
     
     logInfo("AMAN: Called function addExecutor, transfering control to Lambda function")
     val addRequestAcknowledged = testing ||
-      client.requestTotalExecutorsLambda(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount)
+      client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
     logInfo("AMAN: Call return successfully from Lambda function")
     if (addRequestAcknowledged) {
       val executorsString = "executor" + { if (delta > 1) "s" else "" }
