@@ -26,10 +26,6 @@ private[spark] trait ExecutorAllocationClient {
 
   /** Get the list of currently active executors */
   private[spark] def getExecutorIds(): Seq[String]
-  
-
-  //ATA_AMAN: adding lambda function
-  private[spark] def getExecutorIdsLambda(): Seq[String]
 
   /**
    * Update the cluster manager on our scheduling needs. Three bits of information are included
@@ -50,20 +46,11 @@ private[spark] trait ExecutorAllocationClient {
       localityAwareTasks: Int,
       hostToLocalTaskCount: Map[String, Int]): Boolean
 
-  //ATA_AMAN: adding Lambda
-  private[spark] def requestTotalExecutorsLambda(
-      numExecutors: Int,
-      localityAwareTasks: Int,
-      hostToLocalTaskCount: Map[String, Int]): Boolean
-
   /**
    * Request an additional number of executors from the cluster manager.
    * @return whether the request is acknowledged by the cluster manager.
    */
   def requestExecutors(numAdditionalExecutors: Int): Boolean
-
-  //ATA_AMAN: adding Lambda
-  def requestExecutorsLambda(numAdditionalExecutors: Int): Boolean
 
   /**
    * Request that the cluster manager kill the specified executors.
@@ -71,21 +58,12 @@ private[spark] trait ExecutorAllocationClient {
    */
   def killExecutors(executorIds: Seq[String]): Seq[String]
 
-  //ATA_AMAN: adding Lambda
-  def killExecutorsLambda(executorIds: Seq[String]): Seq[String]
-
   /**
    * Request that the cluster manager kill the specified executor.
    * @return whether the request is acknowledged by the cluster manager.
    */
   def killExecutor(executorId: String): Boolean = {
     val killedExecutors = killExecutors(Seq(executorId))
-    killedExecutors.nonEmpty && killedExecutors(0).equals(executorId)
-  }
-  
-  //ATA_AMAN: adding Lambda
-  def killExecutorLambda(executorId: String): Boolean = {
-    val killedExecutors = killExecutorsLambda(Seq(executorId))
     killedExecutors.nonEmpty && killedExecutors(0).equals(executorId)
   }
  

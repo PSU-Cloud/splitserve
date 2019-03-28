@@ -56,14 +56,16 @@ private[spark] object CoarseGrainedClusterMessages {
       executorRef: RpcEndpointRef,
       hostname: String,
       cores: Int,
-      logUrls: Map[String, String])
+      logUrls: Map[String, String],
+      executorType: String)
     extends CoarseGrainedClusterMessage
 
  case class LambdaDetails(
        executorId: String,
        awsRequestId: String,
        logGroupName: String,
-       logStreamName: String)
+       logStreamName: String,
+       executorType: String)
      extends CoarseGrainedClusterMessage
 
 

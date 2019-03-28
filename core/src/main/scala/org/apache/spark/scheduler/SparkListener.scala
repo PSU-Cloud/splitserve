@@ -114,7 +114,8 @@ case class SparkListenerExecutorLambdaDetails(
     executorId: String,
     awsRequestId: String,
     logGroupName: String,
-    logStreamName: String)
+    logStreamName: String,
+    executorType: String)
   extends SparkListenerEvent
 
 /**
