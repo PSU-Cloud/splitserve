@@ -286,6 +286,22 @@ private[spark] class StandaloneSchedulerBackend(
     }
   }
 
+  override def executorAdded(fullId: String, workerId: String, hostPort: String, cores: Int,
+    memory: Int) {
+    logInfo("Granted executor ID %s on hostPort %s with %d core(s), %s RAM".format(
+      fullId, hostPort, cores, Utils.megabytesToString(memory)))
+  }
+
+  override def executorRemoved(
+      fullId: String, message: String, exitStatus: Option[Int], workerLost: Boolean) {
+    val reason: ExecutorLossReason = exitStatus match {
+      case Some(code) => ExecutorExited(code, exitCausedByApp = true, message)
+      case None => SlaveLost(message, workerLost = workerLost)
+    }
+    logInfo("Executor %s removed: %s".format(fullId, message))
+    removeExecutor(fullId.split("/")(1), reason)
+ }
+
   // AMAN: Using Vanilla Spark definition, will amend to use Lambda definition 
   // as well or instead of this.
   override def sufficientResourcesRegistered(): Boolean = {
@@ -396,7 +412,7 @@ private[spark] class StandaloneSchedulerBackend(
     }
   }
 
-  final def doRequestTotalExecutors_lambda(requestedTotal: Int): Future[Boolean] = {
+  override final def doRequestTotalExecutors_lambda(requestedTotal: Int): Future[Boolean] = {
     // TODO: Check again against numExecutorsExpected ??
     // We assume that all pending lambda calls are live lambdas and are fine
     logInfo("AMAN: Function call in doRequestTotalExecutors_lambda")
@@ -521,7 +537,6 @@ private[spark] class StandaloneSchedulerBackend(
       conf.get(EXECUTOR_INSTANCES).getOrElse(targetNumExecutors)
     }
    }
-  }
 
   private def waitForRegistration() = {
     registrationBarrier.acquire()

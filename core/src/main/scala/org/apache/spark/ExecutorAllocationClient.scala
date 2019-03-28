@@ -51,7 +51,7 @@ private[spark] trait ExecutorAllocationClient {
    * Request an additional number of executors from the cluster manager.
    * @return whether the request is acknowledged by the cluster manager.
    */
-  def requestExecutors(numAdditionalExecutors: Int): Boolean
+  def requestExecutors(numAdditionalExecutors: Int, executorType: String): Boolean
 
   /**
    * Request that the cluster manager kill the specified executors.

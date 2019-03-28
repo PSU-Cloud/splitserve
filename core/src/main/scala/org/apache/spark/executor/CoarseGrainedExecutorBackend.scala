@@ -203,7 +203,8 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       cores: Int,
       appId: String,
       workerUrl: Option[String],
-      userClassPath: Seq[URL]) {
+      userClassPath: Seq[URL],
+      executorType: String) {
 
     Utils.initDaemon(log)
      val hostname: String = if (hostnameInput == "LAMBDA") {
@@ -275,7 +276,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
     var workerUrl: Option[String] = None
     val userClassPath = new mutable.ListBuffer[URL]()
     //AMAN: Adding executor type
-    val executorType: String = null
+    var executorType: String = null
 
     var argv = args.toList
     while (!argv.isEmpty) {
