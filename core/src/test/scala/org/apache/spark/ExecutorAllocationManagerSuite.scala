@@ -1132,11 +1132,12 @@ private class DummyLocalSchedulerBackend (sc: SparkContext, sb: SchedulerBackend
   override private[spark] def requestTotalExecutors(
       numExecutors: Int,
       localityAwareTasks: Int,
-      hostToLocalTaskCount: Map[String, Int]): Boolean =
-    sc.requestTotalExecutors(numExecutors, localityAwareTasks, hostToLocalTaskCount)
+      hostToLocalTaskCount: Map[String, Int],
+      executorType: String): Boolean =
+    sc.requestTotalExecutors(numExecutors, localityAwareTasks, hostToLocalTaskCount, "VM")
 
-  override def requestExecutors(numAdditionalExecutors: Int): Boolean =
-    sc.requestExecutors(numAdditionalExecutors)
+  override def requestExecutors(numAdditionalExecutors: Int, executorType: String): Boolean =
+    sc.requestExecutors(numAdditionalExecutors, "VM")
 
   override def killExecutors(executorIds: Seq[String]): Seq[String] = {
     val response = sc.killExecutors(executorIds)

@@ -450,7 +450,7 @@ private[spark] class StandaloneSchedulerBackend(
         }
       }
 
-      super.doKillExecutors(activeExecutors)
+      super.doKillExecutorsLambda(activeExecutors)
       true
     }
   }
@@ -479,16 +479,16 @@ private[spark] class StandaloneSchedulerBackend(
     }
   }
 
+   // AMAN: Commenting this function because most if not all of this is common with
+   // the super definition.
    /**
     * Override the DriverEndpoint to add extra logic for the case when an executor is disconnected.
     * This endpoint communicates with the executors and queries the AM for an executor's exit
     * status when the executor is disconnected.
-    */
   private class LambdaDriverEndpoint(rpcEnv: RpcEnv, sparkProperties: Seq[(String, String)])
     extends DriverEndpoint(rpcEnv, sparkProperties) {
 
     // TODO Fix comment below
-    /**
       * When onDisconnected is received at the driver endpoint, the superclass DriverEndpoint
       * handles it by assuming the Executor was lost for a bad reason and removes the executor
       * immediately.
@@ -498,7 +498,6 @@ private[spark] class StandaloneSchedulerBackend(
       * (e.g., preemption), according to the application master, then we pass that information down
       * to the TaskSetManager to inform the TaskSetManager that tasks on that lost executor should
       * not count towards a job failure.
-      */
     override def onDisconnected(rpcAddress: RpcAddress): Unit = {
       logDebug(s"LAMBDA: 10001: onDisconnected: $rpcAddress")
       super.onDisconnected(rpcAddress)
@@ -506,12 +505,11 @@ private[spark] class StandaloneSchedulerBackend(
     }
   }
  
-  //TODO: Aman, maybe this is overriding some super function so look into that
   override def createDriverEndpoint(properties: Seq[(String, String)]): DriverEndpoint = {
     logDebug("LAMBDA: 10001: createDriverEndPoint: LambdaDriverEndpoint")
     new LambdaDriverEndpoint(rpcEnv, properties)
   }
-
+      */
  
   // AMAN: We probably don't need this function, we have to discuss the case
   // where if we don't have any initial executors on VMs, do we launch executors

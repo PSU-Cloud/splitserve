@@ -101,17 +101,17 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request 1
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 1)
     assert(apps.head.getExecutorLimit === 1)
     // request 1 more
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 2)
     assert(apps.head.getExecutorLimit === 2)
     // request 1 more; this one won't go through
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 2)
     assert(apps.head.getExecutorLimit === 3)
@@ -126,7 +126,7 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request many more; this increases the limit well beyond the cluster capacity
-    assert(sc.requestExecutors(1000))
+    assert(sc.requestExecutors(1000, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 2)
     assert(apps.head.getExecutorLimit === 1000)
@@ -149,7 +149,7 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request 1
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 1)
     assert(apps.head.executors.values.head.cores === 8)
@@ -158,12 +158,12 @@ class StandaloneDynamicAllocationSuite
     // This highlights a limitation of using dynamic allocation with max cores WITHOUT
     // setting cores per executor: once an application scales down and then scales back
     // up, its executors may not be spread out anymore!
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 1)
     assert(apps.head.getExecutorLimit === 2)
     // request 1 more; this one also won't go through for the same reason
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 1)
     assert(apps.head.getExecutorLimit === 3)
@@ -180,7 +180,7 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request many more; this increases the limit well beyond the cluster capacity
-    assert(sc.requestExecutors(1000))
+    assert(sc.requestExecutors(1000, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 2)
     assert(apps.head.executors.values.map(_.cores).toArray === Array(4, 4))
@@ -204,20 +204,20 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request 1
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 1)
     assert(apps.head.executors.values.head.cores === 10)
     assert(apps.head.getExecutorLimit === 1)
     // request 1 more
     // Note: the cores are not evenly distributed because we scheduled these executors 1 by 1
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 2)
     assert(apps.head.executors.values.map(_.cores).toSet === Set(10, 6))
     assert(apps.head.getExecutorLimit === 2)
     // request 1 more; this one won't go through
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 2)
     assert(apps.head.getExecutorLimit === 3)
@@ -233,7 +233,7 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request many more; this increases the limit well beyond the cluster capacity
-    assert(sc.requestExecutors(1000))
+    assert(sc.requestExecutors(1000, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 2)
     assert(apps.head.executors.values.map(_.cores).toArray === Array(8, 8))
@@ -256,17 +256,17 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request 1
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 1)
     assert(apps.head.getExecutorLimit === 1)
     // request 3 more
-    assert(sc.requestExecutors(3))
+    assert(sc.requestExecutors(3, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 4)
     assert(apps.head.getExecutorLimit === 4)
     // request 10 more; only 6 will go through
-    assert(sc.requestExecutors(10))
+    assert(sc.requestExecutors(10, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 10)
     assert(apps.head.getExecutorLimit === 14)
@@ -286,7 +286,7 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request many more; this increases the limit well beyond the cluster capacity
-    assert(sc.requestExecutors(1000))
+    assert(sc.requestExecutors(1000, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 10)
     assert(apps.head.getExecutorLimit === 1000)
@@ -310,17 +310,17 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request 1
-    assert(sc.requestExecutors(1))
+    assert(sc.requestExecutors(1, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 1)
     assert(apps.head.getExecutorLimit === 1)
     // request 3 more
-    assert(sc.requestExecutors(3))
+    assert(sc.requestExecutors(3, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 4)
     assert(apps.head.getExecutorLimit === 4)
     // request 10 more; none will go through
-    assert(sc.requestExecutors(10))
+    assert(sc.requestExecutors(10, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 4)
     assert(apps.head.getExecutorLimit === 14)
@@ -345,7 +345,7 @@ class StandaloneDynamicAllocationSuite
     assert(apps.head.executors.size === 0)
     assert(apps.head.getExecutorLimit === 0)
     // request many more; this increases the limit well beyond the cluster capacity
-    assert(sc.requestExecutors(1000))
+    assert(sc.requestExecutors(1000, "VM"))
     apps = getApplications()
     assert(apps.head.executors.size === 4)
     assert(apps.head.getExecutorLimit === 1000)
@@ -560,7 +560,7 @@ class StandaloneDynamicAllocationSuite
       val endpointRef = mock(classOf[RpcEndpointRef])
       val mockAddress = mock(classOf[RpcAddress])
       when(endpointRef.address).thenReturn(mockAddress)
-      val message = RegisterExecutor(id, endpointRef, "localhost", 10, Map.empty)
+      val message = RegisterExecutor(id, endpointRef, "localhost", 10, Map.empty, "VM")
       val backend = sc.schedulerBackend.asInstanceOf[CoarseGrainedSchedulerBackend]
       backend.driverEndpoint.askWithRetry[Boolean](message)
     }

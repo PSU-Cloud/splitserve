@@ -608,7 +608,8 @@ private val listenerBus = scheduler.sc.listenerBus
     killExecutors(executorIds, replace = false, force = false)
   }
 
-  /**
+
+    /**
    * Request that the cluster manager kill the specified executors.
    *
    * When asking the executor to be replaced, the executor loss is considered a failure, and
@@ -635,74 +636,81 @@ private val listenerBus = scheduler.sc.listenerBus
 
       // If an executor is already pending to be removed, do not kill it again (SPARK-9795)
       // If this executor is busy, do not kill it unless we are told to force kill it (SPARK-9552)
-      val executorsToKill = knownExecutors
+      val executorsVMToKill = knownExecutors
         .filter { id => !executorsPendingToRemove.contains(id) }
         .filter { id => force || !scheduler.isExecutorBusy(id) }
-      executorsToKill.foreach { id => executorsPendingToRemove(id) = !replace }
+        .filter { id => executorDataMap(id).executorType == "VM" }
+      executorsVMToKill.foreach { id => executorsPendingToRemove(id) = !replace }
 
-      logInfo(s"Actual list of executor(s) to be killed is ${executorsToKill.mkString(", ")}")
+      val executorsLambdaToKill = knownExecutors
+        .filter { id => !executorsPendingToRemove.contains(id) }
+        .filter { id => force || !scheduler.isExecutorBusy(id) }
+        .filter { id => executorDataMap(id).executorType == "VM" }
+      executorsLambdaToKill.foreach { id => executorsPendingToRemove(id) = !replace }
+
+      logInfo(s"AMAN: Actual list of executor(s) to be killed is, for VM:  ${executorsVMToKill.mkString(", ")}, and for Lambdas: ${executorsLambdaToKill.mkString(", ")}")
 
       // If we do not wish to replace the executors we kill, sync the target number of executors
       // with the cluster manager to avoid allocating new ones. When computing the new target,
       // take into account executors that are pending to be added or removed.
+
+      //AMAN: TODO look into this case.
       val adjustTotalExecutors =
         if (!replace) {
-          requestedTotalExecutors = math.max(requestedTotalExecutors - executorsToKill.size, 0)
-          if (requestedTotalExecutors !=
-              (numExistingExecutors + numPendingExecutors - executorsPendingToRemove.size)) {
-            logDebug(
-              s"""killExecutors($executorIds, $replace, $force): Executor counts do not match:
-                 |requestedTotalExecutors  = $requestedTotalExecutors
-                 |numExistingExecutors     = $numExistingExecutors
-                 |numPendingExecutors      = $numPendingExecutors
-                 |executorsPendingToRemove = ${executorsPendingToRemove.size}""".stripMargin)
-          }
-          doRequestTotalExecutors(requestedTotalExecutors)
+          doRequestTotalExecutors(
+            numExistingExecutors + numPendingExecutors - executorsPendingToRemove.size)
         } else {
           numPendingExecutors += knownExecutors.size
           Future.successful(true)
         }
 
-      val killExecutors: Boolean => Future[Boolean] =
-        if (!executorsToKill.isEmpty) {
-          _ => doKillExecutors(executorsToKill)
+      val adjustTotalExecutorsCopy = adjustTotalExecutors
+
+      val killExecutorsVM: Boolean => Future[Boolean] =
+        if (!executorsVMToKill.isEmpty) {
+          _ => doKillExecutors(executorsVMToKill)
         } else {
           _ => Future.successful(false)
         }
 
-      val killResponse = adjustTotalExecutors.flatMap(killExecutors)(ThreadUtils.sameThread)
+      val killExecutorsLambda: Boolean => Future[Boolean] =
+        if (!executorsLambdaToKill.isEmpty) {
+          _ => doKillExecutorsLambda(executorsLambdaToKill)
+        } else {
+          _ => Future.successful(false)
+        }
 
-      killResponse.flatMap(killSuccessful =>
-        Future.successful (if (killSuccessful) executorsToKill else Seq.empty[String])
+      val killResponseVM = adjustTotalExecutors.flatMap(killExecutorsVM)(ThreadUtils.sameThread)
+      val killResponseLambda = adjustTotalExecutorsCopy.flatMap(killExecutorsLambda)(ThreadUtils.sameThread)
+
+      killResponseVM.flatMap(killSuccessful =>
+        Future.successful (if (killSuccessful) executorsVMToKill else Seq.empty[String])
+      )(ThreadUtils.sameThread)
+
+      killResponseLambda.flatMap(killSuccessful =>
+        Future.successful (if (killSuccessful) executorsLambdaToKill else Seq.empty[String])
       )(ThreadUtils.sameThread)
     }
 
     defaultAskTimeout.awaitResult(response)
-  }
-
+ }
   /**
 * Kill the given list of executors through the cluster manager.
 * @return whether the kill request is acknowledged.
 */
 
-// AMAN: Implement a compatible function here, different function
-// for Lambda and VM executors
+// AMAN: 2 different defintions for Lambda and VM respectivelu
 
-/*
-protected def doKillExecutors(executorIds: Seq[String]): Future[Boolean] = {
-  val reason = "Driver asked to stop executor"
-  executorIds.foreach {
-    executorId => 
-    if (executorDataMap.get(executorId).foreach(_.executorType == "LAMBDA")) {
-      executorDataMap.get(executorId).foreach(_.executorEndpoint.send(StopExecutor))
-      removeExecutor(executorId, new ExecutorLossReason(reason))
-
+ protected def doKillExecutorsLambda(executorIds: Seq[String]): Future[Boolean] = {
+      val reason = "Driver asked to stop executor"
+      executorIds.foreach {
+        executorId => {
+          executorDataMap.get(executorId).foreach(_.executorEndpoint.send(StopExecutor))
+          removeExecutor(executorId, new ExecutorLossReason(reason))
+        }
+      }
       Future.successful(true)
-    } else {
-      Future.successful(false)
-    }
-  }
- }*/
+ }
 
  protected def doKillExecutors(executorIds: Seq[String]): Future[Boolean] =
    Future.successful(false)

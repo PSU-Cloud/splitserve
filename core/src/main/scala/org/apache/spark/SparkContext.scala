@@ -1517,7 +1517,8 @@ class SparkContext(config: SparkConf) extends Logging {
   def requestTotalExecutors(
       numExecutors: Int,
       localityAwareTasks: Int,
-      hostToLocalTaskCount: scala.collection.immutable.Map[String, Int]
+      hostToLocalTaskCount: scala.collection.immutable.Map[String, Int],
+      executorType: String
     ): Boolean = {
     schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
@@ -1534,7 +1535,7 @@ class SparkContext(config: SparkConf) extends Logging {
    * @return whether the request is received.
    */
   @DeveloperApi
-  def requestExecutors(numAdditionalExecutors: Int): Boolean = {
+  def requestExecutors(numAdditionalExecutors: Int, executorType: String): Boolean = {
     schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
         b.requestExecutors(numAdditionalExecutors, "VM")
