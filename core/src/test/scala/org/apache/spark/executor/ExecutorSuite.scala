@@ -104,7 +104,7 @@ class ExecutorSuite extends SparkFunSuite {
 
     var executor: Executor = null
     try {
-      executor = new Executor("id", "localhost", mockEnv, userClassPath = Nil, isLocal = true)
+      executor = new Executor("id", "localhost", mockEnv, userClassPath = Nil, isLocal = true, "VM")
       // the task will be launched in a dedicated worker thread
       executor.launchTask(mockExecutorBackend, 0, 0, "", serializedTask)
 

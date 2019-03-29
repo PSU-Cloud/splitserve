@@ -100,7 +100,7 @@ private[spark] class CoarseGrainedExecutorBackend(
     case RegisteredExecutor =>
       logInfo("Successfully registered with driver")
       try {
-        executor = new Executor(executorId, hostname, env, userClassPath, isLocal = false)
+        executor = new Executor(executorId, hostname, env, userClassPath, isLocal = false, executorType)
       } catch {
         case NonFatal(e) =>
           exitExecutor(1, "Unable to create executor due to " + e.getMessage, e)

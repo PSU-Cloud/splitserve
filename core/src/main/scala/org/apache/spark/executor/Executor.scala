@@ -52,7 +52,8 @@ private[spark] class Executor(
     executorHostname: String,
     env: SparkEnv,
     userClassPath: Seq[URL] = Nil,
-    isLocal: Boolean = false)
+    isLocal: Boolean = false,
+    executorType: String)
   extends Logging {
 
   logInfo(s"Starting executor ID $executorId on host $executorHostname")

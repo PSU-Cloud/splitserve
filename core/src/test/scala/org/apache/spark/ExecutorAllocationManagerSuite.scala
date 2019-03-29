@@ -1110,7 +1110,7 @@ private class DummyLocalExternalClusterManager extends ExternalClusterManager {
       sc: SparkContext,
       masterURL: String,
       scheduler: TaskScheduler): SchedulerBackend = {
-    val sb = new LocalSchedulerBackend(sc.getConf, scheduler.asInstanceOf[TaskSchedulerImpl], 1)
+    val sb = new LocalSchedulerBackend(sc.getConf, scheduler.asInstanceOf[TaskSchedulerImpl], 1, "VM")
     new DummyLocalSchedulerBackend(sc, sb)
   }
 

@@ -48,7 +48,8 @@ private[spark] class LocalEndpoint(
     userClassPath: Seq[URL],
     scheduler: TaskSchedulerImpl,
     executorBackend: LocalSchedulerBackend,
-    private val totalCores: Int)
+    private val totalCores: Int,
+    executorType: String)
   extends ThreadSafeRpcEndpoint with Logging {
 
   private var freeCores = totalCores
@@ -57,7 +58,7 @@ private[spark] class LocalEndpoint(
   val localExecutorHostname = "localhost"
 
   private val executor = new Executor(
-    localExecutorId, localExecutorHostname, SparkEnv.get, userClassPath, isLocal = true)
+    localExecutorId, localExecutorHostname, SparkEnv.get, userClassPath, isLocal = true, "VM")
 
   override def receive: PartialFunction[Any, Unit] = {
     case ReviveOffers =>
@@ -98,7 +99,8 @@ private[spark] class LocalEndpoint(
 private[spark] class LocalSchedulerBackend(
     conf: SparkConf,
     scheduler: TaskSchedulerImpl,
-    val totalCores: Int)
+    val totalCores: Int,
+    executorType: String)
   extends SchedulerBackend with ExecutorBackend with Logging {
 
   private val appId = "local-" + System.currentTimeMillis
@@ -123,7 +125,7 @@ private[spark] class LocalSchedulerBackend(
 
   override def start() {
     val rpcEnv = SparkEnv.get.rpcEnv
-    val executorEndpoint = new LocalEndpoint(rpcEnv, userClassPath, scheduler, this, totalCores)
+    val executorEndpoint = new LocalEndpoint(rpcEnv, userClassPath, scheduler, this, totalCores, executorType)
     localEndpoint = rpcEnv.setupEndpoint("LocalSchedulerBackendEndpoint", executorEndpoint)
     listenerBus.post(SparkListenerExecutorAdded(
       System.currentTimeMillis,
