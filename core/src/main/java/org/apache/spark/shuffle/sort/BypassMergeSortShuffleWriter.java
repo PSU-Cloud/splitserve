@@ -23,6 +23,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import javax.annotation.Nullable;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import scala.None$;
 import scala.Option;
 import scala.Product2;
@@ -71,6 +75,7 @@ import org.apache.spark.util.Utils;
  * <p>
  * There have been proposals to completely remove this code path; see SPARK-6026 for details.
  */
+
 final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
 
   private static final Logger logger = LoggerFactory.getLogger(BypassMergeSortShuffleWriter.class);
@@ -89,6 +94,12 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
   /** Array of file writers, one for each partition */
   private DiskBlockObjectWriter[] partitionWriters;
   private FileSegment[] partitionWriterSegments;
+
+  /** Array of HDFS file writers, one for each partition */
+  private HDFSBlockObjectWriter[] HDFSPartitionWriters;
+  // TODO: Needs to be fixed
+  private HDFSFileSegment[] HDFSPartitionWriterSegments;
+
   @Nullable private MapStatus mapStatus;
   private long[] partitionLengths;
 
@@ -98,6 +109,13 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
    * we don't try deleting files, etc twice.
    */
   private boolean stopping = false;
+
+  private SparkConf conf;
+  private boolean shuffleOverHDFS = false;
+  private String shuffleHDFSNode = "";
+
+  private Configuration hadoopConf;
+  private FileSystem hadoopFileSystem;
 
   BypassMergeSortShuffleWriter(
       BlockManager blockManager,
@@ -118,6 +136,11 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     this.writeMetrics = taskContext.taskMetrics().shuffleWriteMetrics();
     this.serializer = dep.serializer();
     this.shuffleBlockResolver = shuffleBlockResolver;
+    this.conf = conf;
+    this.shuffleOverHDFS = blockManager.shuffleOverHDFSEnabled();
+    this.shuffleHDFSNode = BlockManager.getHDFSNode(conf);
+    this.hadoopConf = BlockManager.getHadoopConf(conf);
+    this.hadoopFileSystem = BlockManager.getHadoopFileSystem(conf);
   }
 
   @Override
@@ -133,6 +156,12 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     final long openStartTime = System.nanoTime();
     partitionWriters = new DiskBlockObjectWriter[numPartitions];
     partitionWriterSegments = new FileSegment[numPartitions];
+
+    if(shuffleOverHDFS) {
+      HDFSPartitionWriters = new HDFSBlockObjectWriter[numPartitions];
+      HDFSPartitionWriterSegments = new HDFSFileSegment[numPartitions];
+    }
+
     for (int i = 0; i < numPartitions; i++) {
       final Tuple2<TempShuffleBlockId, File> tempShuffleBlockIdPlusFile =
         blockManager.diskBlockManager().createTempShuffleBlock();
@@ -182,6 +211,11 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
    * @return array of lengths, in bytes, of each partition of the file (used by map output tracker).
    */
   private long[] writePartitionedFile(File outputFile) throws IOException {
+    if(shuffleOverHDFS) {
+      Path outputPath = Utils.localFileToHDFS(shuffleHDFSNode, outputFile);
+      return writePartitionedFileToHDFS(outputPath);
+    }
+
     // Track location of the partition starts in the output file
     final long[] lengths = new long[numPartitions];
     if (partitionWriters == null) {
@@ -218,6 +252,45 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     return lengths;
   }
 
+  private long[] writePartitionedFileToHDFS(Path outputPath) throws IOException {
+    // Track location of the partition starts in the output file
+    final long[] lengths = new long[numPartitions];
+    if(partitionWriters == null) {
+      return lengths;
+    }
+
+    final FSDataOutputStream outputStream = hadoopFileSystem.create(outputPath);
+    logger.info("Writing partitioned data to {} ", outputPath);
+    final long writeStartTime = System.nanoTime();
+    boolean threwException = true;
+    try {
+      for (int i = 0; i < numPartitions; i++) {
+        final File file = partitionWriters[i].file();
+        logger.info("Trying to read from temp file {} ", file);
+        if (file.exists()) {
+          logger.info("Temp file exists: Reading from file {} ", file);
+          final FileInputStream inputStream = new FileInputStream(file);
+          boolean copyThrewException = true;
+          try {
+            lengths[i] = Utils.copyStream(inputStream, outputStream, false, false);
+            copyThrewException = false;
+          } finally {
+            Closeables.close(inputStream, copyThrewException);
+          }
+          if (!file.delete()) {
+            logger.error("Unable to delete file for partition {}", i);
+          }
+        }
+      }
+      threwException = false;
+    } finally {
+      Closeables.close(outputStream, threwException);
+      writeMetrics.incWriteTime(System.nanoTime() - writeStartTime);
+    }
+    HDFSPartitionWriters = null;
+    return lengths;
+  }
+
   @Override
   public Option<MapStatus> stop(boolean success) {
     if (stopping) {
@@ -242,6 +315,9 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
             }
           } finally {
             partitionWriters = null;
+            if(shuffleOverHDFS) {
+              HDFSPartitionWriters = null;
+            }
           }
         }
         return None$.empty();

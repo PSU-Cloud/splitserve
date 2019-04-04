@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import org.apache.spark.SparkConf
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.internal.Logging
-import org.apache.spark.rpc.{RpcCallContext, RpcEndpointRef, RpcEnv, ThreadSafeRpcEndpoint}
+import org.apache.spark.rpc._
 import org.apache.spark.scheduler._
 import org.apache.spark.storage.BlockManagerMessages._
 import org.apache.spark.util.{ThreadUtils, Utils}
@@ -69,7 +69,7 @@ class BlockManagerMasterEndpoint(
 
   override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
     case RegisterBlockManager(blockManagerId, maxMemSize, slaveEndpoint) =>
-      context.reply(register(blockManagerId, maxMemSize, slaveEndpoint))
+      context.reply(register(blockManagerId, maxMemSize, slaveEndpoint, context.senderAddress))
 
     case _updateBlockInfo @
         UpdateBlockInfo(blockManagerId, blockId, storageLevel, deserializedSize, size) =>
@@ -315,7 +315,8 @@ class BlockManagerMasterEndpoint(
   private def register(
       idWithoutTopologyInfo: BlockManagerId,
       maxMemSize: Long,
-      slaveEndpoint: RpcEndpointRef): BlockManagerId = {
+      slaveEndpoint: RpcEndpointRef,
+      slaveAddress: RpcAddress): BlockManagerId = {
     // the dummy id is not expected to contain the topology information.
     // we get that info here and respond back with a more fleshed out block manager id
     val id = BlockManagerId(

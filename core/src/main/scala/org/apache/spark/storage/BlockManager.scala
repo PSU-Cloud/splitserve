@@ -20,6 +20,8 @@ package org.apache.spark.storage
 import java.io._
 import java.nio.ByteBuffer
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import scala.collection.mutable
 import scala.collection.mutable.HashMap
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -29,6 +31,7 @@ import scala.util.Random
 import scala.util.control.NonFatal
 
 import org.apache.spark._
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.executor.{DataReadMethod, ShuffleWriteMetrics}
 import org.apache.spark.internal.Logging
 import org.apache.spark.memory.{MemoryManager, MemoryMode}
@@ -39,12 +42,11 @@ import org.apache.spark.network.shuffle.ExternalShuffleClient
 import org.apache.spark.network.shuffle.protocol.ExecutorShuffleInfo
 import org.apache.spark.rpc.RpcEnv
 import org.apache.spark.serializer.{SerializerInstance, SerializerManager}
-import org.apache.spark.shuffle.ShuffleManager
+import org.apache.spark.shuffle.{HDFSShuffleBlockResolver, ShuffleManager}
 import org.apache.spark.storage.memory._
 import org.apache.spark.unsafe.Platform
 import org.apache.spark.util._
 import org.apache.spark.util.io.ChunkedByteBuffer
-
 
 /* Class for returning a fetched block and associated metrics. */
 private[spark] class BlockResult(
@@ -75,11 +77,14 @@ private[spark] class BlockManager(
   private[spark] val externalShuffleServiceEnabled =
     conf.getBoolean("spark.shuffle.service.enabled", false)
 
+  private[spark] val shuffleOverHDFSEnabled =
+    BlockManager.shuffleOverHDFSEnabled(conf)
+
   val diskBlockManager = {
     // Only perform cleanup if an external service is not serving our shuffle files.
     val deleteFilesOnStop =
       !externalShuffleServiceEnabled || executorId == SparkContext.DRIVER_IDENTIFIER
-    new DiskBlockManager(conf, deleteFilesOnStop)
+    new DiskBlockManager(executorId, conf, deleteFilesOnStop)
   }
 
   // Visible for testing
@@ -123,10 +128,12 @@ private[spark] class BlockManager(
 
   // Client to read other executors' shuffle files. This is either an external service, or just the
   // standard BlockTransferService to directly connect to other Executors.
+  val transConf = SparkTransportConf.fromSparkConf(conf, "shuffle", numUsableCores)
   private[spark] val shuffleClient = if (externalShuffleServiceEnabled) {
-    val transConf = SparkTransportConf.fromSparkConf(conf, "shuffle", numUsableCores)
     new ExternalShuffleClient(transConf, securityManager, securityManager.isAuthenticationEnabled(),
       securityManager.isSaslEncryptionEnabled())
+  } else if (shuffleOverHDFSEnabled) {
+    new HDFSShuffleClient(transConf, this)
   } else {
     blockTransferService
   }
@@ -173,8 +180,17 @@ private[spark] class BlockManager(
       ret
     }
 
-    val id =
-      BlockManagerId(executorId, blockTransferService.hostName, blockTransferService.port, None)
+    logInfo(s"LAMBDA: 11000: BlockManager: ${blockTransferService.hostName}")
+    logInfo(s"LAMBDA: 11001: BlockManager: ${blockTransferService.port}")
+    val id = if (executorId == SparkContext.DRIVER_IDENTIFIER ||
+      executorId == SparkContext.LEGACY_DRIVER_IDENTIFIER) {
+      logInfo(s"LAMBDA: 11002: BlockManager: Creating driver BlockManagerId")
+      BlockManagerId(executorId, blockTransferService.hostName,
+        blockTransferService.port, None)
+    } else {
+      logInfo(s"LAMBDA: 11002: BlockManager: Creating executor BlockManagerId")
+      BlockManagerId(executorId, executorId, executorId.toInt, None)
+    }
 
     val idFromMaster = master.registerBlockManager(
       id,
@@ -310,6 +326,17 @@ private[spark] class BlockManager(
           reportBlockStatus(blockId, BlockStatus.empty)
           throw new BlockNotFoundException(blockId.toString)
       }
+    }
+  }
+
+  def getRemoteBlockData(blockId: String, executorId: String): ManagedBuffer = {
+    if (blockId.contains("shuffle") &&
+      shuffleManager.shuffleBlockResolver.isInstanceOf[HDFSShuffleBlockResolver]) {
+        shuffleManager.shuffleBlockResolver.asInstanceOf[HDFSShuffleBlockResolver]
+          .getRemoteBlockData(blockId, executorId)
+    } else {
+      throw new UnsupportedOperationException(
+        "Get remote block data available for HDFS Shuffle blocks")
     }
   }
 
@@ -551,6 +578,73 @@ private[spark] class BlockManager(
     }
   }
 
+  private def getLocationsForLambda(blockId: BlockId): Seq[BlockManagerId] = {
+    val locs = Random.shuffle(master.getLocations(blockId))
+    val (preferredLocs, otherLocs) = locs.partition { loc => blockManagerId.host == loc.host }
+    val (driverLoc, restLocs) = otherLocs.partition { loc =>
+      (loc.executorId == SparkContext.DRIVER_IDENTIFIER ||
+      loc.executorId == SparkContext.LEGACY_DRIVER_IDENTIFIER)
+    }
+    val seq = preferredLocs ++ driverLoc
+    seq.foreach(x => logInfo(s"LAMBDA: 15000: getLocationsForLambda: $x"))
+    seq
+  }
+
+  def getRemoteBytesForLambda(blockId: BlockId): Option[ChunkedByteBuffer] = {
+    logDebug(s"Getting remote block $blockId")
+    require(blockId != null, "BlockId is null")
+    var runningFailureCount = 0
+    var totalFailureCount = 0
+    val locations = getLocationsForLambda(blockId)
+    val maxFetchFailures = locations.size
+    var locationIterator = locations.iterator
+    while (locationIterator.hasNext) {
+      val loc = locationIterator.next()
+      logDebug(s"Getting remote block $blockId from $loc")
+      val data = try {
+        blockTransferService.fetchBlockSync(
+          loc.host, loc.port, loc.executorId, blockId.toString).nioByteBuffer()
+      } catch {
+        case NonFatal(e) =>
+          runningFailureCount += 1
+          totalFailureCount += 1
+
+          if (totalFailureCount >= maxFetchFailures) {
+            // Give up trying anymore locations. Either we've tried all of the original locations,
+            // or we've refreshed the list of locations from the master, and have still
+            // hit failures after trying locations from the refreshed list.
+            logWarning(s"Failed to fetch block after $totalFailureCount fetch failures. " +
+              s"Most recent failure cause:", e)
+            return None
+          }
+
+          logWarning(s"Failed to fetch remote block $blockId " +
+            s"from $loc (failed attempt $runningFailureCount)", e)
+
+          // If there is a large number of executors then locations list can contain a
+          // large number of stale entries causing a large number of retries that may
+          // take a significant amount of time. To get rid of these stale entries
+          // we refresh the block locations after a certain number of fetch failures
+          if (runningFailureCount >= maxFailuresBeforeLocationRefresh) {
+            locationIterator = getLocationsForLambda(blockId).iterator
+            logDebug(s"Refreshed locations from the driver " +
+              s"after ${runningFailureCount} fetch failures.")
+            runningFailureCount = 0
+          }
+
+          // This location failed, so we retry fetch from a different one by returning null here
+          null
+      }
+
+      if (data != null) {
+        return Some(new ChunkedByteBuffer(data))
+      }
+      logDebug(s"The value of block $blockId is null")
+    }
+    logDebug(s"Block $blockId not found")
+    None
+  }
+
   /**
    * Return a list of locations for the given block, prioritizing the local machine since
    * multiple block managers can share the same host.
@@ -748,6 +842,18 @@ private[spark] class BlockManager(
     val syncWrites = conf.getBoolean("spark.shuffle.sync", false)
     new DiskBlockObjectWriter(file, serializerManager, serializerInstance, bufferSize,
       syncWrites, writeMetrics, blockId)
+  }
+
+  def getHDFSBlockWriter(
+      blockId: BlockId,
+      file: File,
+      serializerInstance: SerializerInstance,
+      bufferSize: Int,
+      writeMetrics: ShuffleWriteMetrics): HDFSBlockObjectWriter = {
+    val syncWrites = conf.getBoolean("spark.shuffle.sync", false)
+    val path = Utils.localFileToHDFS(BlockManager.getHDFSNode(conf), file)
+    new HDFSBlockObjectWriter(file, path, BlockManager.getHadoopConf(conf),
+      serializerManager, serializerInstance, bufferSize, syncWrites, writeMetrics, blockId)
   }
 
   /**
@@ -1371,6 +1477,10 @@ private[spark] class BlockManager(
 private[spark] object BlockManager {
   private val ID_GENERATOR = new IdGenerator
 
+  private var hadoopConf : Option[Configuration] = _
+
+  private var hadoopFileSystem : Option[FileSystem] = _
+
   def blockIdsToHosts(
       blockIds: Array[BlockId],
       env: SparkEnv,
@@ -1389,5 +1499,37 @@ private[spark] object BlockManager {
       blockManagers(blockIds(i)) = blockLocations(i).map(_.host)
     }
     blockManagers.toMap
+  }
+
+  def shuffleOverHDFSEnabled(conf: SparkConf): Boolean = conf.getBoolean("spark.shuffle.hdfs.enabled", false)
+
+  def getHDFSNode(conf: SparkConf): String = {
+    val HDFSNode = Option(conf.get("spark.shuffle.hdfs.node"))
+
+    if (!HDFSnode.isDefined) {
+      throw new Exception (s"HDFS Node must be declared to write intermediate shuffle data")
+    }
+
+    HDFSNode.toString
+  }
+
+  def getHadoopConf(conf: SparkConf) : Configuration = {
+    hadoopConf match {
+      case Some(hConf) => hConf
+      case _ => {
+        hadoopConf = Some(SparkHadoopUtil.get.newConfiguration(conf))
+        hadoopConf.get
+      }
+    }
+  }
+
+  def getHadoopFileSystem(conf: SparkConf): FileSystem = {
+    hadoopFileSystem match {
+      case Some(fs) => fs
+      case _ => {
+        hadoopFileSystem = Some(new Path(getHDFSNode(conf)).getFileSystem(getHadoopConf(conf)))
+        hadoopFileSystem.get
+      }
+    }
   }
 }

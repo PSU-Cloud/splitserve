@@ -180,7 +180,6 @@ object SparkEnv extends Logging {
       isLocal,
       numCores,
       ioEncryptionKey,
-      null,
       listenerBus = listenerBus,
       mockOutputCommitCoordinator = mockOutputCommitCoordinator
     )
@@ -197,8 +196,7 @@ object SparkEnv extends Logging {
       port: Int,
       numCores: Int,
       ioEncryptionKey: Option[Array[Byte]],
-      isLocal: Boolean,
-      executorType: String): SparkEnv = {
+      isLocal: Boolean): SparkEnv = {
     val env = create(
       conf,
       executorId,
@@ -207,8 +205,7 @@ object SparkEnv extends Logging {
       port,
       isLocal,
       numCores,
-      ioEncryptionKey,
-      executorType
+      ioEncryptionKey
     )
     SparkEnv.set(env)
     env
@@ -226,7 +223,6 @@ object SparkEnv extends Logging {
       isLocal: Boolean,
       numUsableCores: Int,
       ioEncryptionKey: Option[Array[Byte]],
-      executorType: String = null,
       listenerBus: LiveListenerBus = null,
       mockOutputCommitCoordinator: Option[OutputCommitCoordinator] = None): SparkEnv = {
 
@@ -341,8 +337,15 @@ object SparkEnv extends Logging {
     }
 
     val blockTransferService =
-      new NettyBlockTransferService(conf, securityManager, bindAddress, advertiseAddress,
-        blockManagerPort, numUsableCores)
+      if (isDriver) {
+        new NettyBlockTransferService(conf, securityManager, bindAddress, advertiseAddress,
+          blockManagerPort, numUsableCores)
+      } else {
+        logInfo(s"LAMBDA: 13000: SparkEnv: $bindAddress")
+        logInfo(s"LAMBDA: 13001: SparkEnv: $advertiseAddress")
+        new NettyBlockTransferService(conf, securityManager, "localhost", "localhost",
+          blockManagerPort, numUsableCores)
+      }
 
     val blockManagerMaster = new BlockManagerMaster(registerOrLookupEndpoint(
       BlockManagerMaster.DRIVER_ENDPOINT_NAME,
@@ -395,10 +398,11 @@ object SparkEnv extends Logging {
     // Add a reference to tmp dir created by driver, we will delete this tmp dir when stop() is
     // called, and we only need to do it for driver. Because driver may run as a service, and if we
     // don't delete this tmp dir when sc is stopped, then will create too many tmp dirs.
-    if (isDriver) {
-      val sparkFilesDir = Utils.createTempDir(Utils.getLocalDir(conf), "userFiles").getAbsolutePath
-      envInstance.driverTmpDir = Some(sparkFilesDir)
-    }
+
+    // driverTmpDir needs to be set to different dir for executors as well,
+    // as root might not be writable (in the case of lambda)
+    val sparkFilesDir = Utils.createTempDir(Utils.getLocalDir(conf), "userFiles").getAbsolutePath
+    envInstance.driverTmpDir = Some(sparkFilesDir)
 
     envInstance
   }

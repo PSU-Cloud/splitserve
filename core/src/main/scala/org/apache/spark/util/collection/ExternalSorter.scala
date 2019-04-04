@@ -686,8 +686,13 @@ private[spark] class ExternalSorter[K, V, C](
 
     // Track location of each range in the output file
     val lengths = new Array[Long](numPartitions)
-    val writer = blockManager.getDiskWriter(blockId, outputFile, serInstance, fileBufferSize,
-      context.taskMetrics().shuffleWriteMetrics)
+    val writer = if (blockManager.shuffleHDFSEnabled) {
+      blockManager.getHDFSBlockWriter(blockId, outputFile, serInstance, fileBufferSize,
+        context.taskMetrics().shuffleWriteMetrics)
+    } else {
+      blockManager.getDiskWriter(blockId, outputFile, serInstance, fileBufferSize,
+        context.taskMetrics().shuffleWriteMetrics)
+    }
 
     if (spills.isEmpty) {
       // Case where we only have in-memory data

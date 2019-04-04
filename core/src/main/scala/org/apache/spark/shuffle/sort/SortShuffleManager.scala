@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.apache.spark._
 import org.apache.spark.internal.Logging
 import org.apache.spark.shuffle._
+import org.apache.spark.storage.BlockManager
 
 /**
  * In sort-based shuffle, incoming records are sorted according to their target partition ids, then
@@ -79,7 +80,13 @@ private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager 
    */
   private[this] val numMapsForShuffle = new ConcurrentHashMap[Int, Int]()
 
-  override val shuffleBlockResolver = new IndexShuffleBlockResolver(conf)
+  val shuffleOverHDFS = BlockManager.shuffleOverHDFSEnabled(conf)
+
+  override val shuffleBlockResolver = if (shuffleOverHDFS) {
+    new HDFSShuffleBlockResolver(conf)
+  } else {
+    new IndexShuffleBlockResolver(conf)
+  }
 
   /**
    * Register a shuffle with the manager and obtain a handle for it to pass to tasks.
@@ -140,7 +147,7 @@ private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager 
       case bypassMergeSortHandle: BypassMergeSortShuffleHandle[K @unchecked, V @unchecked] =>
         new BypassMergeSortShuffleWriter(
           env.blockManager,
-          shuffleBlockResolver.asInstanceOf[IndexShuffleBlockResolver],
+          shuffleBlockResolver,
           bypassMergeSortHandle,
           mapId,
           context,
