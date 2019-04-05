@@ -2501,6 +2501,14 @@ private[spark] object Utils extends Logging {
     new File(path.getAbsolutePath + "." + UUID.randomUUID())
   }
 
+  def localFileToHDFS(shuffleHDFSNode: String, path: File) : Path = {
+    new Path(shuffleHDFSNode.concat(s"/${path.getCanonicalPath}"))
+  }
+
+  def HDFSToLocalFile(shuffleHDFSNode: String, path: Path) : File = {
+    new File(path.toString.replace(shuffleHDFSNode, ""))
+}
+
   /**
    * Returns the name of this JVM process. This is OS dependent but typically (OSX, Linux, Windows),
    * this is formatted as PID@hostname.

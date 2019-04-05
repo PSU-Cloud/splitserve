@@ -1506,7 +1506,7 @@ private[spark] object BlockManager {
   def getHDFSNode(conf: SparkConf): String = {
     val HDFSNode = Option(conf.get("spark.shuffle.hdfs.node"))
 
-    if (!HDFSnode.isDefined) {
+    if (!HDFSNode.isDefined) {
       throw new Exception (s"HDFS Node must be declared to write intermediate shuffle data")
     }
 

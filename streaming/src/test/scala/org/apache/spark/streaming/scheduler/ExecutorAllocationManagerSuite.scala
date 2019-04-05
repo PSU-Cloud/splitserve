@@ -68,9 +68,9 @@ class ExecutorAllocationManagerSuite extends SparkFunSuite
         if (expectedRequestedTotalExecs.nonEmpty) {
           require(expectedRequestedTotalExecs.get > 0)
           verify(allocationClient, times(1)).requestTotalExecutors(
-            meq(expectedRequestedTotalExecs.get), meq(0), meq(Map.empty))
+            meq(expectedRequestedTotalExecs.get), meq(0), meq(Map.empty), "VM")
         } else {
-          verify(allocationClient, never).requestTotalExecutors(0, 0, Map.empty)
+          verify(allocationClient, never).requestTotalExecutors(0, 0, Map.empty, "VM")
         }
       }
 
@@ -133,7 +133,7 @@ class ExecutorAllocationManagerSuite extends SparkFunSuite
       when(allocationClient.getExecutorIds()).thenReturn((1 to numExecs).map(_.toString))
       requestExecutors(allocationManager, numNewExecs)
       verify(allocationClient, times(1)).requestTotalExecutors(
-        meq(expectedRequestedTotalExecs), meq(0), meq(Map.empty))
+        meq(expectedRequestedTotalExecs), meq(0), meq(Map.empty), "VM")
     }
 
     withAllocationManager(numReceivers = 1) { case (_, allocationManager) =>
