@@ -1504,13 +1504,13 @@ private[spark] object BlockManager {
   def shuffleOverHDFSEnabled(conf: SparkConf): Boolean = conf.getBoolean("spark.shuffle.hdfs.enabled", false)
 
   def getHDFSNode(conf: SparkConf): String = {
-    val HDFSNode = Option(conf.get("spark.shuffle.hdfs.node"))
+    conf.get("spark.shuffle.hdfs.node")
 
+    //AMAN_ATA: TODO: Find a better way to perform this check and look for a default place above.
+    /*
     if (!HDFSNode.isDefined) {
       throw new Exception (s"HDFS Node must be declared to write intermediate shuffle data")
-    }
-
-    HDFSNode.toString
+    }*/
   }
 
   def getHadoopConf(conf: SparkConf) : Configuration = {

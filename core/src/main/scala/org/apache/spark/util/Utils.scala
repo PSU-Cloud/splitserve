@@ -2502,7 +2502,9 @@ private[spark] object Utils extends Logging {
   }
 
   def localFileToHDFS(shuffleHDFSNode: String, path: File) : Path = {
-    new Path(shuffleHDFSNode.concat(s"/${path.getCanonicalPath}"))
+    val pathToReturn = new Path(shuffleHDFSNode.concat(s"/${path.getCanonicalPath}"))
+    logInfo(s"AMAN: Path = $pathToReturn")
+    pathToReturn
   }
 
   def HDFSToLocalFile(shuffleHDFSNode: String, path: Path) : File = {
