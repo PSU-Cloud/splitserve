@@ -234,10 +234,14 @@ private[spark] class HDFSShuffleBlockResolver(
       .mkString("/")
       .concat(s"/executor-${executorId}-${executorHashCode}")
     }
-
+ 
+    
     val indexFile = getFile(executorLocalDirs, subDirs, shuffleIndexFile)
+    logInfo(s"AMAN: indexFile value : $indexFile")
     val indexFilePath = Utils.localFileToHDFS(shuffleHDFSNode, indexFile)
+    logInfo(s"AMAN: File Path : $indexFilePath and shuffleHDFSNode : $shuffleHDFSNode")
     val in = hadoopFileSystem.open(indexFilePath)
+    logInfo("AMAN: Successfully created Handle !!")
 
     try {
       ByteStreams.skipFully(in, reduceId * 8)

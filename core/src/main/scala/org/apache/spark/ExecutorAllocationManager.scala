@@ -313,14 +313,14 @@ private[spark] class ExecutorAllocationManager(
     val maxNeeded = maxNumExecutorsNeeded
     //AMAN_ATA: Checking the call flow
 
-    logInfo("AMAN: Called UpdateAndSync from ExecutionAllocationManager")
+    //logInfo("AMAN: Called UpdateAndSync from ExecutionAllocationManager")
 
     if (initializing) {
       // Do not change our target while we are still initializing,
       // Otherwise the first job may have to ramp up unnecessarily
       0
     } else if (maxNeeded < numExecutorsTarget) {
-      logInfo("AMAN: UpdateAndSync called the FIRST If condition")
+      //logInfo("AMAN: UpdateAndSync called the FIRST If condition")
       // The target number exceeds the number we actually need, so stop adding new
       // executors and inform the cluster manager to cancel the extra pending requests
       val oldNumExecutorsTarget = numExecutorsTarget
@@ -329,14 +329,14 @@ private[spark] class ExecutorAllocationManager(
 
       // If the new target has not changed, avoid sending a message to the cluster manager
       if (numExecutorsTarget < oldNumExecutorsTarget) {
-        logInfo("AMAN: UpdateAndSync Called within SECOND IF")
+        //logInfo("AMAN: UpdateAndSync Called within SECOND IF")
         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
         logDebug(s"Lowering target number of executors to $numExecutorsTarget (previously " +
           s"$oldNumExecutorsTarget) because not all requested executors are actually needed")
       }
       numExecutorsTarget - oldNumExecutorsTarget
     } else if (addTime != NOT_SET && now >= addTime) {
-      logInfo("AMAN: UpdateAndSync called within ELSE IF")
+      //logInfo("AMAN: UpdateAndSync called within ELSE IF")
       val delta = addExecutors(maxNeeded)
       logDebug(s"Starting timer to add more executors (to " +
         s"expire in $sustainedSchedulerBacklogTimeoutS seconds)")
@@ -385,10 +385,10 @@ private[spark] class ExecutorAllocationManager(
       return 0
     }
     
-    logInfo("AMAN: Called function addExecutor, transfering control to Lambda function")
+    //logInfo("AMAN: Called function addExecutor, transfering control to Lambda function")
     val addRequestAcknowledged = testing ||
       client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
-    logInfo("AMAN: Call return successfully from Lambda function")
+    //logInfo("AMAN: Call return successfully from Lambda function")
     if (addRequestAcknowledged) {
       val executorsString = "executor" + { if (delta > 1) "s" else "" }
       logInfo(s"Requesting $delta new $executorsString because tasks are backlogged" +
