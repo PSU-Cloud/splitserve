@@ -595,7 +595,7 @@ private[spark] class BlockManager(
     require(blockId != null, "BlockId is null")
     var runningFailureCount = 0
     var totalFailureCount = 0
-    val locations = getLocationsForLambda(blockId)
+    val locations = getLocations(blockId)
     val maxFetchFailures = locations.size
     var locationIterator = locations.iterator
     while (locationIterator.hasNext) {
@@ -626,7 +626,7 @@ private[spark] class BlockManager(
           // take a significant amount of time. To get rid of these stale entries
           // we refresh the block locations after a certain number of fetch failures
           if (runningFailureCount >= maxFailuresBeforeLocationRefresh) {
-            locationIterator = getLocationsForLambda(blockId).iterator
+            locationIterator = getLocations(blockId).iterator
             logDebug(s"Refreshed locations from the driver " +
               s"after ${runningFailureCount} fetch failures.")
             runningFailureCount = 0

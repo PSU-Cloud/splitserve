@@ -381,7 +381,7 @@ private[spark] abstract class MockBackend(
    * scheduling.
    */
   override def reviveOffers(): Unit = {
-    val newTaskDescriptions = taskScheduler.resourceOffers(generateOffers()).flatten
+    val newTaskDescriptions = taskScheduler.resourceOffers(generateOffers(), "VM").flatten
     // get the task now, since that requires a lock on TaskSchedulerImpl, to prevent individual
     // tests from introducing a race if they need it
     val newTasks = taskScheduler.synchronized {

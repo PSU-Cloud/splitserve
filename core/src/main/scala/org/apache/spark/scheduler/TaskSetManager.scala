@@ -432,10 +432,9 @@ private[spark] class TaskSetManager(
         blacklist.isExecutorBlacklistedForTaskSet(execId)
     }
 
-    if (executorType == "LAMBDA") {
+      //AMAN: These two variables are used for Lambda executors only 
       val executeOneTask = conf.getBoolean("spark.scheduler.executor.executeOneTask", false)
       val ranTaskAlready = executeOneTask && hasExecutorRanTask(execId)
-    }
 
     if (!isZombie && !offerBlacklisted && (executorType == "VM" || (executorType == "LAMBDA" && !ranTaskAlready))) {
       val curTime = clock.getTimeMillis()
