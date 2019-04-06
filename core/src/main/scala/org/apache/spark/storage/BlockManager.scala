@@ -578,7 +578,7 @@ private[spark] class BlockManager(
     }
   }
 
-  private def getLocationsForLambda(blockId: BlockId): Seq[BlockManagerId] = {
+  private def getLocations(blockId: BlockId): Seq[BlockManagerId] = {
     val locs = Random.shuffle(master.getLocations(blockId))
     val (preferredLocs, otherLocs) = locs.partition { loc => blockManagerId.host == loc.host }
     val (driverLoc, restLocs) = otherLocs.partition { loc =>
@@ -590,7 +590,7 @@ private[spark] class BlockManager(
     seq
   }
 
-  def getRemoteBytesForLambda(blockId: BlockId): Option[ChunkedByteBuffer] = {
+  def getRemoteBytes(blockId: BlockId): Option[ChunkedByteBuffer] = {
     logDebug(s"Getting remote block $blockId")
     require(blockId != null, "BlockId is null")
     var runningFailureCount = 0
@@ -627,74 +627,6 @@ private[spark] class BlockManager(
           // we refresh the block locations after a certain number of fetch failures
           if (runningFailureCount >= maxFailuresBeforeLocationRefresh) {
             locationIterator = getLocationsForLambda(blockId).iterator
-            logDebug(s"Refreshed locations from the driver " +
-              s"after ${runningFailureCount} fetch failures.")
-            runningFailureCount = 0
-          }
-
-          // This location failed, so we retry fetch from a different one by returning null here
-          null
-      }
-
-      if (data != null) {
-        return Some(new ChunkedByteBuffer(data))
-      }
-      logDebug(s"The value of block $blockId is null")
-    }
-    logDebug(s"Block $blockId not found")
-    None
-  }
-
-  /**
-   * Return a list of locations for the given block, prioritizing the local machine since
-   * multiple block managers can share the same host.
-   */
-  private def getLocations(blockId: BlockId): Seq[BlockManagerId] = {
-    val locs = Random.shuffle(master.getLocations(blockId))
-    val (preferredLocs, otherLocs) = locs.partition { loc => blockManagerId.host == loc.host }
-    preferredLocs ++ otherLocs
-  }
-
-  /**
-   * Get block from remote block managers as serialized bytes.
-   */
-  def getRemoteBytes(blockId: BlockId): Option[ChunkedByteBuffer] = {
-    logDebug(s"Getting remote block $blockId")
-    require(blockId != null, "BlockId is null")
-    var runningFailureCount = 0
-    var totalFailureCount = 0
-    val locations = getLocations(blockId)
-    val maxFetchFailures = locations.size
-    var locationIterator = locations.iterator
-    while (locationIterator.hasNext) {
-      val loc = locationIterator.next()
-      logDebug(s"Getting remote block $blockId from $loc")
-      val data = try {
-        blockTransferService.fetchBlockSync(
-          loc.host, loc.port, loc.executorId, blockId.toString).nioByteBuffer()
-      } catch {
-        case NonFatal(e) =>
-          runningFailureCount += 1
-          totalFailureCount += 1
-
-          if (totalFailureCount >= maxFetchFailures) {
-            // Give up trying anymore locations. Either we've tried all of the original locations,
-            // or we've refreshed the list of locations from the master, and have still
-            // hit failures after trying locations from the refreshed list.
-            logWarning(s"Failed to fetch block after $totalFailureCount fetch failures. " +
-              s"Most recent failure cause:", e)
-            return None
-          }
-
-          logWarning(s"Failed to fetch remote block $blockId " +
-            s"from $loc (failed attempt $runningFailureCount)", e)
-
-          // If there is a large number of executors then locations list can contain a
-          // large number of stale entries causing a large number of retries that may
-          // take a significant amount of time. To get rid of these stale entries
-          // we refresh the block locations after a certain number of fetch failures
-          if (runningFailureCount >= maxFailuresBeforeLocationRefresh) {
-            locationIterator = getLocations(blockId).iterator
             logDebug(s"Refreshed locations from the driver " +
               s"after ${runningFailureCount} fetch failures.")
             runningFailureCount = 0

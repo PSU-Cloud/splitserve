@@ -260,9 +260,10 @@ private val listenerBus = scheduler.sc.listenerBus
         new WorkerOffer(id, executorData.executorHost, executorData.freeCores)
         }.toIndexedSeq
 
-    var workOffers = (workOffersVM ++ workOffersLambda)
-
-   launchTasks(scheduler.resourceOffers(workOffers.toIndexedSeq))
+    // AMAN_ATA: Making two function calls to propogate information
+    // down to the control flow
+      launchTasks(scheduler.resourceOffers(workOffersVM, "VM"))
+      launchTasks(scheduler.resourceOffers(workOffersLambda, "LAMBDA"))
   }
 
   override def onDisconnected(remoteAddress: RpcAddress): Unit = {
@@ -280,7 +281,7 @@ private val listenerBus = scheduler.sc.listenerBus
         if (executorData.executorType == "VM") {
         val workOffers = IndexedSeq(
           new WorkerOffer(executorId, executorData.executorHost, executorData.freeCores))
-        launchTasks(scheduler.resourceOffers(workOffers))
+        launchTasks(scheduler.resourceOffers(workOffers, "VM"))
         }
 
         else {
@@ -289,7 +290,7 @@ private val listenerBus = scheduler.sc.listenerBus
         if (executorElapsedTime < executorDecommisioningInterval) {
           val workOffers = IndexedSeq(
             new WorkerOffer(executorId, executorData.executorHost, executorData.freeCores))
-          launchTasks(scheduler.resourceOffers(workOffers))
+          launchTasks(scheduler.resourceOffers(workOffers, "LAMBDA"))
         }
       }
     }

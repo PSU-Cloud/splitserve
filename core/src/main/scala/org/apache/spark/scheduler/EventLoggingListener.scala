@@ -187,6 +187,10 @@ private[spark] class EventLoggingListener(
     logEvent(event, flushLogger = true)
   }
 
+  override def onExecutorLambdaDetails(event: SparkListenerExecutorLambdaDetails): Unit = {
+    logEvent(event, flushLogger = true)
+  }
+
   override def onExecutorRemoved(event: SparkListenerExecutorRemoved): Unit = {
     logEvent(event, flushLogger = true)
   }

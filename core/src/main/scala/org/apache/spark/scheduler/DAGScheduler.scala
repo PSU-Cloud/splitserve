@@ -1326,26 +1326,32 @@ class DAGScheduler(
       failedEpoch(execId) = currentEpoch
       logInfo("Executor lost: %s (epoch %d)".format(execId, currentEpoch))
       blockManagerMaster.removeExecutor(execId)
-
-      if (filesLost || !env.blockManager.externalShuffleServiceEnabled) {
-        logInfo("Shuffle files lost for executor: %s (epoch %d)".format(execId, currentEpoch))
-        // TODO: This will be really slow if we keep accumulating shuffle map stages
-        for ((shuffleId, stage) <- shuffleIdToMapStage) {
-          stage.removeOutputsOnExecutor(execId)
-          mapOutputTracker.registerMapOutputs(
-            shuffleId,
-            stage.outputLocInMapOutputTrackerFormat(),
-            changeEpoch = true)
+    
+       /**
+       * If shuffleOverHDFSEnabled then we don't need to resubmit the
+       * shuffle map stage as the shuffle data is all stored in S3.
+       */
+      if (!env.blockManager.shuffleOverHDFSEnabled) {
+        if (filesLost || !env.blockManager.externalShuffleServiceEnabled) {
+          logInfo("Shuffle files lost for executor: %s (epoch %d)".format(execId, currentEpoch))
+          // TODO: This will be really slow if we keep accumulating shuffle map stages
+          for ((shuffleId, stage) <- shuffleIdToMapStage) {
+            stage.removeOutputsOnExecutor(execId)
+            mapOutputTracker.registerMapOutputs(
+              shuffleId,
+              stage.outputLocInMapOutputTrackerFormat(),
+              changeEpoch = true)
+          }
+          if (shuffleIdToMapStage.isEmpty) {
+            mapOutputTracker.incrementEpoch()
+          }
+          clearCacheLocs()
         }
-        if (shuffleIdToMapStage.isEmpty) {
-          mapOutputTracker.incrementEpoch()
-        }
-        clearCacheLocs()
-      }
-    } else {
+       }
+      } else {
       logDebug("Additional executor lost message for " + execId +
                "(epoch " + currentEpoch + ")")
-    }
+     } 
   }
 
   private[scheduler] def handleExecutorAdded(execId: String, host: String) {
