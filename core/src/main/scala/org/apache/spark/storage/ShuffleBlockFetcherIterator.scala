@@ -304,6 +304,7 @@ final class ShuffleBlockFetcherIterator(
    * Throws a FetchFailedException if the next block could not be fetched.
    */
   override def next(): (BlockId, InputStream) = {
+    logInfo("AMAN: IN THE NEXT FUNCTION !!")
     numBlocksProcessed += 1
     val startFetchWait = System.currentTimeMillis()
     currentResult = results.take()
@@ -329,14 +330,19 @@ final class ShuffleBlockFetcherIterator(
 
     result match {
       case FailureFetchResult(blockId, address, e) =>
+       {
+        logInfo("AMAN: Failing in FIRST Case Match")
         throwFetchFailedException(blockId, address, e)
-
+       }
       case SuccessFetchResult(blockId, address, _, buf, _) =>
         try {
           (result.blockId, new BufferReleasingInputStream(buf.createInputStream(), this))
         } catch {
           case NonFatal(t) =>
+           {
+            logInfo("AMAN: Failing in SECOND Case match")
             throwFetchFailedException(blockId, address, t)
+           }            
         }
     }
   }
