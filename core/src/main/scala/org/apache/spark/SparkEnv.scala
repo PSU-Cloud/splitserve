@@ -342,10 +342,12 @@ object SparkEnv extends Logging {
 
         val blockTransferService =
        if (isDriver) {
+        logInfo(s"AMAN: In DRIVER, port = $blockManagerPort")
         new NettyBlockTransferService(conf, securityManager, bindAddress, advertiseAddress,
           blockManagerPort, numUsableCores)
       } else {
         if (executorType == "VM") {
+           logInfo(s"AMAN: In executor VM, Port = $blockManagerPort")
            new NettyBlockTransferService(conf, securityManager, bindAddress, advertiseAddress,
               blockManagerPort, numUsableCores)
         } else {
