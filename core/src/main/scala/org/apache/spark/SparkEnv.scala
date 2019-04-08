@@ -410,9 +410,12 @@ object SparkEnv extends Logging {
     
     // driverTmpDir needs to be set to different dir for executors as well,
     // as root might not be writable (in the case of lambda)
-    val sparkFilesDir = Utils.createTempDir(Utils.getLocalDir(conf), "userFiles").getAbsolutePath
-    envInstance.driverTmpDir = Some(sparkFilesDir)
+    if ((isDriver) || (executorType != null && executorType == "LAMBDA")) {
+     val sparkFilesDir = Utils.createTempDir(Utils.getLocalDir(conf), "userFiles").getAbsolutePath
+     envInstance.driverTmpDir = Some(sparkFilesDir)
+    }
 
+    
     envInstance
   }
 

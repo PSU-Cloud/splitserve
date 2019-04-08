@@ -169,7 +169,9 @@ private val listenerBus = scheduler.sc.listenerBus
        } else {
          context.senderAddress
        }
+
      logInfo(s"AMAN: Registered executor $executorRef ($executorAddress) with ID $executorId, hostname: $hostname, cores: $cores, executorType: $executorType, logURLs: $logUrls")
+     //logInfo(s"Registered executor $executorRef ($executorAddress) with ID $executorId")
      addressToExecutorId(executorAddress) = executorId
      totalCoreCount.addAndGet(cores)
      totalRegisteredExecutors.addAndGet(1)
