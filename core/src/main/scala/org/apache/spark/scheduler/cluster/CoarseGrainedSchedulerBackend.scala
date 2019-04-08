@@ -169,7 +169,7 @@ private val listenerBus = scheduler.sc.listenerBus
        } else {
          context.senderAddress
        }
-     logInfo(s"Registered executor $executorRef ($executorAddress) with ID $executorId")
+     logInfo(s"AMAN: Registered executor $executorRef ($executorAddress) with ID $executorId, hostname: $hostname, cores: $cores, executorType: $executorType, logURLs: $logUrls")
      addressToExecutorId(executorAddress) = executorId
      totalCoreCount.addAndGet(cores)
      totalRegisteredExecutors.addAndGet(1)
@@ -232,6 +232,7 @@ private val listenerBus = scheduler.sc.listenerBus
           // between the driver and the executor may be still alive so that the executor won't exit
           // automatically, so try to tell the executor to stop itself. See SPARK-13519.
           executorDataMap.get(executorId).foreach(_.executorEndpoint.send(StopExecutor))
+          logInfo(s"AMAN: In receiveAndReply, case RemoveExecutor, ID: $executorId and Reason: $reason")
           removeExecutor(executorId, reason)
           context.reply(true)
 
@@ -333,7 +334,7 @@ private val listenerBus = scheduler.sc.listenerBus
 
    // Remove a disconnected slave from the cluster
     private def removeExecutor(executorId: String, reason: ExecutorLossReason): Unit = {
-      logDebug(s"Asked to remove executor $executorId with reason $reason")
+      logInfo(s"Asked to remove executor $executorId with reason $reason")
       executorDataMap.get(executorId) match {
         case Some(executorInfo) =>
           // This must be synchronized because variables mutated
