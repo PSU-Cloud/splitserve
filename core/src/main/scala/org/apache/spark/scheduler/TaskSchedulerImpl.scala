@@ -350,6 +350,7 @@ private[spark] class TaskSchedulerImpl(
   def statusUpdate(tid: Long, state: TaskState, serializedData: ByteBuffer) {
     var failedExecutor: Option[String] = None
     var reason: Option[ExecutorLossReason] = None
+
     synchronized {
       try {
         taskIdToTaskSetManager.get(tid) match {
@@ -362,6 +363,7 @@ private[spark] class TaskSchedulerImpl(
               if (executorIdToRunningTaskIds.contains(execId)) {
                 reason = Some(
                   SlaveLost(s"Task $tid was lost, so marking the executor as lost as well."))
+                logInfo(s"AMAN: Inside statusUpdate, trying to remove executor : $execId")
                 removeExecutor(execId, reason.get)
                 failedExecutor = Some(execId)
               }
@@ -493,6 +495,7 @@ private[spark] class TaskSchedulerImpl(
       if (executorIdToRunningTaskIds.contains(executorId)) {
         val hostPort = executorIdToHost(executorId)
         logExecutorLoss(executorId, hostPort, reason)
+        logInfo(s"AMAN: in executorLost FIRST IF , executor ID: $executorId")
         removeExecutor(executorId, reason)
         failedExecutor = Some(executorId)
       } else {
@@ -502,6 +505,7 @@ private[spark] class TaskSchedulerImpl(
             // executor. So call removeExecutor() to update tasks running on that executor when
             // the real loss reason is finally known.
             logExecutorLoss(executorId, hostPort, reason)
+            logInfo(s"AMAN: in executorLost ELSE Condition, executor ID: $executorId")
             removeExecutor(executorId, reason)
 
           case None =>
@@ -550,6 +554,7 @@ private[spark] class TaskSchedulerImpl(
   private def removeExecutor(executorId: String, reason: ExecutorLossReason) {
     // The tasks on the lost executor may not send any more status updates (because the executor
     // has been lost), so they should be cleaned up here.
+    logInfo("AMAN: In Private Def removeExecutor")
     executorIdToRunningTaskIds.remove(executorId).foreach { taskIds =>
       logDebug("Cleaning up TaskScheduler state for tasks " +
         s"${taskIds.mkString("[", ",", "]")} on failed executor $executorId")

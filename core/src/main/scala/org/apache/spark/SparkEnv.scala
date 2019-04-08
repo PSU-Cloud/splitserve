@@ -340,15 +340,20 @@ object SparkEnv extends Logging {
       conf.get(BLOCK_MANAGER_PORT)
     }
 
-    val blockTransferService =
+        val blockTransferService =
        if (isDriver) {
         new NettyBlockTransferService(conf, securityManager, bindAddress, advertiseAddress,
           blockManagerPort, numUsableCores)
       } else {
-        logInfo(s"LAMBDA: 13000: SparkEnv: $bindAddress")
-        logInfo(s"LAMBDA: 13001: SparkEnv: $advertiseAddress")
-        new NettyBlockTransferService(conf, securityManager, "localhost", "localhost",
-          blockManagerPort, numUsableCores)
+        if (executorType == "VM") {
+           new NettyBlockTransferService(conf, securityManager, bindAddress, advertiseAddress,
+              blockManagerPort, numUsableCores)
+        } else {
+           logInfo(s"LAMBDA: 13000: SparkEnv: $bindAddress")
+           logInfo(s"LAMBDA: 13001: SparkEnv: $advertiseAddress")
+           new NettyBlockTransferService(conf, securityManager, "localhost", "localhost",
+              blockManagerPort, numUsableCores)
+        }
       }
 
     val blockManagerMaster = new BlockManagerMaster(registerOrLookupEndpoint(
@@ -405,9 +410,12 @@ object SparkEnv extends Logging {
     
     // driverTmpDir needs to be set to different dir for executors as well,
     // as root might not be writable (in the case of lambda)
-    val sparkFilesDir = Utils.createTempDir(Utils.getLocalDir(conf), "userFiles").getAbsolutePath
-    envInstance.driverTmpDir = Some(sparkFilesDir)
+    if ((isDriver) || (executorType != null && executorType == "LAMBDA")) {
+     val sparkFilesDir = Utils.createTempDir(Utils.getLocalDir(conf), "userFiles").getAbsolutePath
+     envInstance.driverTmpDir = Some(sparkFilesDir)
+    }
 
+    
     envInstance
   }
 

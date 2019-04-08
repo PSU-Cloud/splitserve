@@ -69,9 +69,13 @@ private[spark] class Executor(
 
   // No ip or host:port - just hostname
   Utils.checkHost(executorHostname, "Expected executed slave to be a hostname")
-  // must not have port specified.
+  // must not have port specified. 
+  logInfo("AMAN: Checking the if condition for assertion")
+  if (Utils.parseHostPort(executorHostname)._2 != 0) {
+      logInfo("AMAN: The assertion following this check will fail !!")
+  }
   assert (0 == Utils.parseHostPort(executorHostname)._2)
-
+  logInfo("AMAN: Assertion passed")
   // Make sure the local hostname we report matches the cluster scheduler's name for this host
   Utils.setCustomHostname(executorHostname)
 

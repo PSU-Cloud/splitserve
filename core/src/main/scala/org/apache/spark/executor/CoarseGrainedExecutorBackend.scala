@@ -103,7 +103,10 @@ private[spark] class CoarseGrainedExecutorBackend(
         executor = new Executor(executorId, hostname, env, userClassPath, isLocal = false, executorType)
       } catch {
         case NonFatal(e) =>
+         {
+          logInfo("AMAN: Caught a non-fatal exception")
           exitExecutor(1, "Unable to create executor due to " + e.getMessage, e)
+         }
       }
 
     case RegisterExecutorFailed(message) =>

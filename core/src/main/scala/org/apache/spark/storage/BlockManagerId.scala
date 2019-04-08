@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.apache.spark.SparkContext
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.util.Utils
+import org.apache.spark.internal.Logging
 
 /**
  * :: DeveloperApi ::
@@ -47,13 +48,18 @@ class BlockManagerId private (
 
   if (null != host_) {
     Utils.checkHost(host_, "Expected hostname")
+    println("AMAN: Checking first assert")
+    println(s"AMAN: Port =  $port_")
     assert (port_ > 0)
+    println("AMAN: Passed first assert")
   }
 
   def hostPort: String = {
     // DEBUG code
     Utils.checkHost(host)
+    println("AMAN: Checking second assert")
     assert (port > 0)
+    println("AMAN: Passed second assert")
     host + ":" + port
   }
 
