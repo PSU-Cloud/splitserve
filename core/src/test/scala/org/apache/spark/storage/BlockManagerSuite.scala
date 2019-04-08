@@ -84,7 +84,7 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
     val memManager = UnifiedMemoryManager(conf, numCores = 1)
     val serializerManager = new SerializerManager(serializer, conf)
     val blockManager = new BlockManager(name, rpcEnv, master, serializerManager, conf,
-      memManager, mapOutputTracker, shuffleManager, transfer, securityMgr, 0)
+      memManager, mapOutputTracker, shuffleManager, transfer, securityMgr, 0, "VM")
     memManager.setMemoryStore(blockManager.memoryStore)
     blockManager.initialize("app-id")
     blockManager
@@ -862,7 +862,7 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
     val serializerManager = new SerializerManager(new JavaSerializer(conf), conf)
     store = new BlockManager(SparkContext.DRIVER_IDENTIFIER, rpcEnv, master,
       serializerManager, conf, memoryManager, mapOutputTracker,
-      shuffleManager, transfer, securityMgr, 0)
+      shuffleManager, transfer, securityMgr, 0, "VM")
     memoryManager.setMemoryStore(store.memoryStore)
     store.initialize("app-id")
 

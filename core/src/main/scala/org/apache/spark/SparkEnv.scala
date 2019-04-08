@@ -364,9 +364,10 @@ object SparkEnv extends Logging {
       conf, isDriver)
 
     // NB: blockManager is not valid until initialize() is called later.
+    //AMAN_ATA: Adding executorType to set the port in BlockManager
     val blockManager = new BlockManager(executorId, rpcEnv, blockManagerMaster,
       serializerManager, conf, memoryManager, mapOutputTracker, shuffleManager,
-      blockTransferService, securityManager, numUsableCores)
+      blockTransferService, securityManager, numUsableCores, executorType)
 
     val metricsSystem = if (isDriver) {
       // Don't start metrics system right now for Driver.

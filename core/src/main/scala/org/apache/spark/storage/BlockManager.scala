@@ -71,7 +71,8 @@ private[spark] class BlockManager(
     shuffleManager: ShuffleManager,
     val blockTransferService: BlockTransferService,
     securityManager: SecurityManager,
-    numUsableCores: Int)
+    numUsableCores: Int,
+    executorType: String)
   extends BlockDataManager with BlockEvictionHandler with Logging {
 
   private[spark] val externalShuffleServiceEnabled =
@@ -183,14 +184,14 @@ private[spark] class BlockManager(
     logInfo(s"LAMBDA: 11000: BlockManager: ${blockTransferService.hostName}")
     logInfo(s"LAMBDA: 11001: BlockManager: ${blockTransferService.port}")
     val id = if (executorId == SparkContext.DRIVER_IDENTIFIER ||
-      executorId == SparkContext.LEGACY_DRIVER_IDENTIFIER) {
+      executorId == SparkContext.LEGACY_DRIVER_IDENTIFIER || executorType == "VM") {
       logInfo(s"LAMBDA: 11002: BlockManager: Creating driver BlockManagerId")
       BlockManagerId(executorId, blockTransferService.hostName,
         blockTransferService.port, None)
     } else {
-      logInfo(s"LAMBDA: 11002: BlockManager: Creating executor BlockManagerId")
-      BlockManagerId(executorId, executorId, executorId.toInt, None)
-    }
+       logInfo(s"LAMBDA: 11002: BlockManager: Creating executor BlockManagerId")
+       BlockManagerId(executorId, executorId, executorId.toInt, None)
+     }
 
     val idFromMaster = master.registerBlockManager(
       id,
