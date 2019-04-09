@@ -580,7 +580,7 @@ private[spark] class BlockManager(
   }
 
   private def getLocations(blockId: BlockId): Seq[BlockManagerId] = {
-    val locs = Random.shuffle(master.getLocations(blockId))
+    /*val locs = Random.shuffle(master.getLocations(blockId))
     val (preferredLocs, otherLocs) = locs.partition { loc => blockManagerId.host == loc.host }
     val (driverLoc, restLocs) = otherLocs.partition { loc =>
       (loc.executorId == SparkContext.DRIVER_IDENTIFIER ||
@@ -588,7 +588,11 @@ private[spark] class BlockManager(
     }
     val seq = preferredLocs ++ driverLoc
     seq.foreach(x => logInfo(s"LAMBDA: 15000: getLocationsForLambda: $x"))
-    seq
+    seq*/
+
+   val locs = Random.shuffle(master.getLocations(blockId))
+   val (preferredLocs, otherLocs) = locs.partition { loc => blockManagerId.host == loc.host }
+   preferredLocs ++ otherLocs
   }
 
   def getRemoteBytes(blockId: BlockId): Option[ChunkedByteBuffer] = {
