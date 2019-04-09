@@ -229,6 +229,7 @@ private[spark] class HDFSShuffleBlockResolver(
     val subDirs = blockManager.diskBlockManager.subDirsPerLocalDir
 
     val executorHashCode = Utils.nonNegativeHash(s"executor-${executorId}").toString.reverse
+    logInfo(s"AMAN: executorHashCode = $executorHashCode")
     val executorLocalDirs : Array[String] = localDirs.map { localDir => localDir.split("\\/")
       .dropRight(1)
       .mkString("/")
@@ -268,7 +269,9 @@ private[spark] class HDFSShuffleBlockResolver(
   }
 
   private def getFile(localDirs: Array[String], subDirsPerLocalDir: Int, filename: String) = {
+    logInfo(s"AMAN: In GET FILE Function, Filename = $filename")
     val hash : Int = Utils.nonNegativeHash(filename)
+    logInfo(s"AMAN: GET FILE hash = $hash")
     val localDir : String = localDirs(hash % localDirs.length)
     val subDirId : Int = (hash / localDirs.length) % subDirsPerLocalDir
     new File(new File(localDir, "%02x".format(subDirId)), filename)
