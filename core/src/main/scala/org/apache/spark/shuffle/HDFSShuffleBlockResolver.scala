@@ -153,6 +153,8 @@ private[spark] class HDFSShuffleBlockResolver(
 
     val indexFilePath = Utils.localFileToHDFS(shuffleHDFSNode, indexFile)
 
+    logInfo(s"AMAN: WriteIndexFileAndCommit: IndexFileName: $indexFile")
+     
     logInfo(s"AMAN: WriteIndexFileAndCommit: IndexFilePath: $indexFilePath")
     val indexTmpPath = Utils.localFileToHDFS(shuffleHDFSNode, indexTmp)
 
@@ -232,7 +234,16 @@ private[spark] class HDFSShuffleBlockResolver(
     val localDirs = blockManager.diskBlockManager.localDirs.map(_.toString)
     val subDirs = blockManager.diskBlockManager.subDirsPerLocalDir
 
+
+    logInfo(s"AMAN: GetRemoteBlockData: ShuffleIndexFile: ${shuffleIndexFile.toString}")
+
     logInfo(s"AMAN: localDirs: $localDirs, executorId: $executorId")
+
+    /*val temp_file = getIndexFile(shuffleId, mapId)
+    val temp = Utils.localFileToHDFS(shuffleHDFSNode, temp_file)
+
+    logInfo(s"AMAN: GetRemoteBlockData: checking temp file name: $temp_file         and         path = $temp")
+
     val executorHashCode = Utils.nonNegativeHash(s"executor-${executorId}").toString.reverse
     logInfo(s"AMAN: executorHashCode = $executorHashCode")
     val executorLocalDirs : Array[String] = localDirs.map { localDir => localDir.split("\\/")
@@ -241,8 +252,8 @@ private[spark] class HDFSShuffleBlockResolver(
       .concat(s"/executor-${executorId}-${executorHashCode}")
     }
  
-    
-    val indexFile = getFile(executorLocalDirs, subDirs, shuffleIndexFile)
+    */
+    val indexFile = getIndexFile(shuffleId, mapId)
     logInfo(s"AMAN: indexFile value : $indexFile")
     val indexFilePath = Utils.localFileToHDFS(shuffleHDFSNode, indexFile)
     logInfo(s"AMAN: File Path : $indexFilePath and shuffleHDFSNode : $shuffleHDFSNode")
