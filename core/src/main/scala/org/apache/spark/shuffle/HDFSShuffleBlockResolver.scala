@@ -152,7 +152,11 @@ private[spark] class HDFSShuffleBlockResolver(
     val indexTmp = Utils.tempFileWith(indexFile)
 
     val indexFilePath = Utils.localFileToHDFS(shuffleHDFSNode, indexFile)
+
+    logInfo(s"AMAN: WriteIndexFileAndCommit: IndexFilePath: $indexFilePath")
     val indexTmpPath = Utils.localFileToHDFS(shuffleHDFSNode, indexTmp)
+
+    logInfo(s"AMAN: WriteIndexFileAndCommit: IndexTempPath: $indexTmpPath")
 
     try {
       val outputStream = hadoopFileSystem.create(indexTmpPath)
