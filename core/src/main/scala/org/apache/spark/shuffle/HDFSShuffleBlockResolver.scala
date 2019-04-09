@@ -264,7 +264,7 @@ private[spark] class HDFSShuffleBlockResolver(
       ByteStreams.skipFully(in, reduceId * 8)
       val offset = in.readLong()
       val nextOffset = in.readLong()
-      val dataFile = getFile(executorLocalDirs, subDirs, shuffleDataFile)
+      val dataFile = getDataFile(shuffleId, mapId)
       val dataFilePath = Utils.localFileToHDFS(shuffleHDFSNode, dataFile)
 
       logDebug("HDFS Segment managed buffer created for path - " + dataFilePath.toString)
