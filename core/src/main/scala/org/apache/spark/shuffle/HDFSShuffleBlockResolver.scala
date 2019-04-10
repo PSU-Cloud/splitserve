@@ -176,7 +176,17 @@ private[spark] class HDFSShuffleBlockResolver(
 
       val dataFile = getDataFile(shuffleId, mapId)
       val dataFilePath = Utils.localFileToHDFS(shuffleHDFSNode, dataFile)
-      val dataTmpPath = Utils.localFileToHDFS(shuffleHDFSNode, dataTmp)
+
+      //AMAN: Adding a null check over here
+
+      var dataTmpPath = if (dataTmp != null) Utils.localFileToHDFS(shuffleHDFSNode, dataTmp) else null
+      
+      /*
+      if (dataTmp != null) {
+          val dataTmpPath = Utils.localFileToHDFS(shuffleHDFSNode, dataTmp)
+      } else {
+          val dataTmpPath = null
+      }*/
       // There is only one IndexShuffleBlockResolver per executor, this synchronization make sure
       // the following check and rename are atomic.
       synchronized {
