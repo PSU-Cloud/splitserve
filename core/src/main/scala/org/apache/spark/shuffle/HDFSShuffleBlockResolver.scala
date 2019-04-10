@@ -243,6 +243,7 @@ private[spark] class HDFSShuffleBlockResolver(
     val temp = Utils.localFileToHDFS(shuffleHDFSNode, temp_file)
 
     logInfo(s"AMAN: GetRemoteBlockData: checking temp file name: $temp_file         and         path = $temp")
+    */
 
     val executorHashCode = Utils.nonNegativeHash(s"executor-${executorId}").toString.reverse
     logInfo(s"AMAN: executorHashCode = $executorHashCode")
@@ -252,8 +253,8 @@ private[spark] class HDFSShuffleBlockResolver(
       .concat(s"/executor-${executorId}-${executorHashCode}")
     }
  
-    */
-    val indexFile = getIndexFile(shuffleId, mapId)
+    
+    val indexFile = getFile(executorLocalDirs, subDirs, shuffleIndexFile)
     logInfo(s"AMAN: indexFile value : $indexFile")
     val indexFilePath = Utils.localFileToHDFS(shuffleHDFSNode, indexFile)
     logInfo(s"AMAN: File Path : $indexFilePath and shuffleHDFSNode : $shuffleHDFSNode")
@@ -264,7 +265,7 @@ private[spark] class HDFSShuffleBlockResolver(
       ByteStreams.skipFully(in, reduceId * 8)
       val offset = in.readLong()
       val nextOffset = in.readLong()
-      val dataFile = getDataFile(shuffleId, mapId)
+      val dataFile = getFile(executorLocalDirs, subDirs, shuffleDataFile)
       val dataFilePath = Utils.localFileToHDFS(shuffleHDFSNode, dataFile)
 
       logDebug("HDFS Segment managed buffer created for path - " + dataFilePath.toString)
