@@ -265,8 +265,14 @@ private val listenerBus = scheduler.sc.listenerBus
 
     // AMAN_ATA: Making two function calls to propogate information
     // down to the control flow
+
+    if (!workOffersVM.isEmpty) {
       launchTasks(scheduler.resourceOffers(workOffersVM, "VM"))
-      //launchTasks(scheduler.resourceOffers(workOffersLambda, "LAMBDA"))
+    }
+
+    if (!workOffersLambda.isEmpty) {
+      launchTasks(scheduler.resourceOffers(workOffersLambda, "LAMBDA"))
+    }
   }
 
   override def onDisconnected(remoteAddress: RpcAddress): Unit = {

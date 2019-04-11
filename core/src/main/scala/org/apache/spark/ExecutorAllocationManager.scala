@@ -387,7 +387,7 @@ private[spark] class ExecutorAllocationManager(
     
     //logInfo("AMAN: Called function addExecutor, transfering control to Lambda function")
     val addRequestAcknowledged = testing ||
-      client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
+      client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
     //logInfo("AMAN: Call return successfully from Lambda function")
     if (addRequestAcknowledged) {
       val executorsString = "executor" + { if (delta > 1) "s" else "" }
