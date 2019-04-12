@@ -62,8 +62,6 @@ private[spark] class CoarseGrainedExecutorBackend(
       driver = Some(ref)
       logInfo(s"AMAN: onStart(): Trying to register executor")
       ref.ask[Boolean](RegisterExecutor(executorId, self, hostname, cores, extractLogUrls, executorType))
-      logInfo(s"AMAN: onStart(): Done Registration")
-
     }(ThreadUtils.sameThread).onComplete {
       // This is a very fast action so we can use "ThreadUtils.sameThread"
       case Success(msg) =>
