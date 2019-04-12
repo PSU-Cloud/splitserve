@@ -287,28 +287,36 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         case ("--driver-url") :: value :: tail =>
           driverUrl = value
           argv = tail
+          logInfo(s"AMAN: tail = $tail")
         case ("--executor-id") :: value :: tail =>
           executorId = value
           argv = tail
+	  logInfo(s"AMAN: tail = $tail")
         case ("--hostname") :: value :: tail =>
           hostname = value
           argv = tail
+	  logInfo(s"AMAN: tail = $tail")
         case ("--cores") :: value :: tail =>
           cores = value.toInt
           argv = tail
+ 	  logInfo(s"AMAN: tail = $tail")
         case ("--app-id") :: value :: tail =>
           appId = value
           argv = tail
+	  logInfo(s"AMAN: tail = $tail")
         case ("--worker-url") :: value :: tail =>
           // Worker url is used in spark standalone mode to enforce fate-sharing with worker
           workerUrl = Some(value)
           argv = tail
+	  logInfo(s"AMAN: tail = $tail")
         case ("--user-class-path") :: value :: tail =>
           userClassPath += new URL(value)
           argv = tail
+	  logInfo(s"AMAN: tail = $tail")
         case ("--executor-type") :: value ::tail =>
 	  executorType = value
           argv = tail
+	  logInfo(s"AMAN: tail = $tail")
         case Nil =>
         case tail =>
           // scalastyle:off println
