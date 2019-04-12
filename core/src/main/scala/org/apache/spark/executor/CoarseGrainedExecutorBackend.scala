@@ -76,7 +76,7 @@ private[spark] class CoarseGrainedExecutorBackend(
 //AMAN: Adding Lambda support for when the executor is launched in a Lambda
 
   try {
-    logInfo(s"AMAN: In the TRY-Catch Block)
+    logInfo(s"AMAN: In the TRY-Catch Block")
     val requestId = env.conf.get("spark.lambda.awsRequestId")
     val logGroupName = env.conf.get("spark.lambda.logGroupName")
     val logStreamName = env.conf.get("spark.lambda.logStreamName")
