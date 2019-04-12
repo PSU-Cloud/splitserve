@@ -188,8 +188,6 @@ private[spark] class StandaloneSchedulerBackend(
 		sc.conf.get("spark.driver.port").toInt,
 		CoarseGrainedSchedulerBackend.ENDPOINT_NAME).toString
 
-        logInfo(s"AMAN: HOSTNAME for VM executor: $HOSTNAME  :  {{HOSTNAME}}")
-
 	val args = Seq(
 	      "--driver-url", driverUrl,
 	      "--executor-id", "{{EXECUTOR_ID}}",
@@ -198,6 +196,9 @@ private[spark] class StandaloneSchedulerBackend(
 	      "--app-id", "{{APP_ID}}",
 	      "--worker-url", "{{WORKER_URL}}",
               "--executor-type", "VM")
+
+        logInfo(s"AMAN: Argument constructed : $args")
+
 	val extraJavaOpts = sc.conf.getOption("spark.executor.extraJavaOptions")
 		.map(Utils.splitCommandString).getOrElse(Seq.empty)
 	val classPathEntries = sc.conf.getOption("spark.executor.extraClassPath")
