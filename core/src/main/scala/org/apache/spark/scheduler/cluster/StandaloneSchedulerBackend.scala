@@ -347,8 +347,8 @@ private[spark] class StandaloneSchedulerBackend(
             "--hostname LAMBDA " +
             "--cores 1 " +
             s"--app-id ${applicationId()} " +
-            s"--user-class-path file:/tmp/lambda/* "
-            s"--executor-Type LAMBDA"
+            s"--user-class-path file:/tmp/lambda/* " + 
+            s"--executor-type LAMBDA"
 
         val commandLine = javaPartialCommandLine + executorPartialCommandLine
 

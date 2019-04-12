@@ -445,7 +445,11 @@ private[deploy] class Worker(
           logInfo("Asked to launch executor %s/%d for %s".format(appId, execId, appDesc.name))
 
           // Create the executor's working directory
+          logInfo(s"AMAN: Worker: WorkDir = $workDir")
+
           val executorDir = new File(workDir, appId + "/" + execId)
+
+          logInfo(s"AMAN: Worker: executorDir = $executorDir")
           if (!executorDir.mkdirs()) {
             throw new IOException("Failed to create directory " + executorDir)
           }
@@ -460,6 +464,7 @@ private[deploy] class Worker(
               appDir.getAbsolutePath()
             }.toSeq)
           appDirectories(appId) = appLocalDirs
+          logInfo(s"AMAN: Worker: appLocalDirs = $appLocalDirs")
           val manager = new ExecutorRunner(
             appId,
             execId,
