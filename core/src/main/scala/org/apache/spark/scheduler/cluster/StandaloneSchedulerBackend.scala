@@ -188,6 +188,8 @@ private[spark] class StandaloneSchedulerBackend(
 		sc.conf.get("spark.driver.port").toInt,
 		CoarseGrainedSchedulerBackend.ENDPOINT_NAME).toString
 
+        logInfo(s"AMAN: HOSTNAME for VM executor: $HOSTNAME  :  {{HOSTNAME}}")
+
 	val args = Seq(
 	      "--driver-url", driverUrl,
 	      "--executor-id", "{{EXECUTOR_ID}}",
@@ -344,6 +346,7 @@ private[spark] class StandaloneSchedulerBackend(
             "--hostname LAMBDA " +
             "--cores 1 " +
             s"--app-id ${applicationId()} " +
+            s"--worker-url null " +
             s"--user-class-path file:/tmp/lambda/* " +
             s"--executor-type LAMBDA"
 
