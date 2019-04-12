@@ -331,7 +331,10 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       printUsageAndExit()
     }
 
-    if (executorType == null) executorType = "LAMBDA"
+    if (executorType == null) {
+       executorType = "LAMBDA"
+       logInfo(s"AMAN: Launching a $executorType executor")
+    }
     run(driverUrl, executorId, hostname, cores, appId, workerUrl, userClassPath, executorType)
     System.exit(0)
   }
