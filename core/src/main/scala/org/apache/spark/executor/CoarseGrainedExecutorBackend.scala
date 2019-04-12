@@ -60,6 +60,7 @@ private[spark] class CoarseGrainedExecutorBackend(
     rpcEnv.asyncSetupEndpointRefByURI(driverUrl).flatMap { ref =>
       // This is a very fast action so we can use "ThreadUtils.sameThread"
       driver = Some(ref)
+      logInfo(s"AMAN: onStart(): Trying to register executor")
       ref.ask[Boolean](RegisterExecutor(executorId, self, hostname, cores, extractLogUrls, executorType))
     }(ThreadUtils.sameThread).onComplete {
       // This is a very fast action so we can use "ThreadUtils.sameThread"
@@ -73,6 +74,7 @@ private[spark] class CoarseGrainedExecutorBackend(
 //AMAN: Adding Lambda support for when the executor is launched in a Lambda
 
   try {
+    logInfo(s"AMAN: In the TRY-Catch Block")
     val requestId = env.conf.get("spark.lambda.awsRequestId")
     val logGroupName = env.conf.get("spark.lambda.logGroupName")
     val logStreamName = env.conf.get("spark.lambda.logStreamName")
@@ -216,7 +218,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       hostnameInput
       }
       logDebug(s"LAMBDA: 2.1: $hostname")
-      logDebug(s"LAMBDA: 2.2: $hostname")
+      logInfo(s"AMAN: Hostname: $hostname")
       SparkHadoopUtil.get.runAsSparkUser { () =>
         logDebug(s"LAMBDA: 2.3")
       }
@@ -241,6 +243,8 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       val props = cfg.sparkProperties ++ Seq[(String, String)](("spark.app.id", appId))
       fetcher.shutdown()
 
+      logInfo(s"AMAN: Completed step 1 in RUN")
+
       // Create SparkEnv using properties we fetched from the driver.
       val driverConf = new SparkConf()
       for ((key, value) <- props) {
@@ -257,9 +261,12 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         SparkHadoopUtil.get.startCredentialUpdater(driverConf)
       }
 
+      logInfo(s"AMAN: Completed step 2 in RUN")
+
       val env = SparkEnv.createExecutorEnv(
         driverConf, executorId, hostname, port, cores, cfg.ioEncryptionKey, isLocal = false, executorType)
 
+      logInfo(s"AMAN: created Executor Env in RUN")
       env.rpcEnv.setupEndpoint("Executor", new CoarseGrainedExecutorBackend(
         env.rpcEnv, driverUrl, executorId, hostname, cores, userClassPath, env, executorType))
       workerUrl.foreach { url =>
