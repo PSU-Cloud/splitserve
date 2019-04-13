@@ -782,8 +782,10 @@ private[spark] object Utils extends Logging {
       // user has access to them.
       getYarnLocalDirs(conf).split(",")
     } else if (conf.getenv("SPARK_EXECUTOR_DIRS") != null) {
+      logInfo(s"AMAN: In case where we have SPARK_EXECUTOR_DIRS")
       conf.getenv("SPARK_EXECUTOR_DIRS").split(File.pathSeparator)
     } else if (conf.getenv("SPARK_LOCAL_DIRS") != null) {
+      logInfo(s"AMAN: In case where we have SPARK_LOCAL_DIRS")
       conf.getenv("SPARK_LOCAL_DIRS").split(",")
     } else if (conf.getenv("MESOS_DIRECTORY") != null && !shuffleServiceEnabled) {
       // Mesos already creates a directory per Mesos task. Spark should use that directory
