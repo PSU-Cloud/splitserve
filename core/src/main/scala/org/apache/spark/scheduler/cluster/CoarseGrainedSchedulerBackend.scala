@@ -655,7 +655,7 @@ private val listenerBus = scheduler.sc.listenerBus
       val executorsLambdaToKill = knownExecutors
         .filter { id => !executorsPendingToRemove.contains(id) }
         .filter { id => force || !scheduler.isExecutorBusy(id) }
-        .filter { id => executorDataMap(id).executorType == "VM" }
+        .filter { id => executorDataMap(id).executorType == "LAMBDA" }
       executorsLambdaToKill.foreach { id => executorsPendingToRemove(id) = !replace }
 
       logInfo(s"AMAN: Actual list of executor(s) to be killed is, for VM:  ${executorsVMToKill.mkString(", ")}, and for Lambdas: ${executorsLambdaToKill.mkString(", ")}")
