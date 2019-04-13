@@ -776,7 +776,13 @@ private[spark] object Utils extends Logging {
    */
   def getConfiguredLocalDirs(conf: SparkConf, executorType: String): Array[String] = {
     val shuffleServiceEnabled = conf.getBoolean("spark.shuffle.service.enabled", false)
-    if (isRunningInYarnContainer(conf)) {
+    if (conf.getBoolean("spark.shuffle.hfds.enabled", false)) {
+      val sparkApplicationId = conf.get("spark.app.id", "")
+      val tmp = System.getProperty("java.io.tmpdir")
+      logInfo(s"AMAN: getConfiguredLocalDirs java.io.tmpdir  = $tmp")
+      val tmpDir = System.getProperty("java.io.tmpdir").split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
+      tmpDir
+    } else if (isRunningInYarnContainer(conf)) {
       // If we are in yarn mode, systems can have different disk layouts so we must set it
       // to what Yarn on this system said was available. Note this assumes that Yarn has
       // created the directories already, and that they are secured so that only the
@@ -784,10 +790,6 @@ private[spark] object Utils extends Logging {
       getYarnLocalDirs(conf).split(",")
     } else if (conf.getenv("SPARK_EXECUTOR_DIRS") != null) {
       conf.getenv("SPARK_EXECUTOR_DIRS").split(File.pathSeparator)
-    } else if (executorType == "LAMBDA") { 
-      val sparkApplicationId = conf.get("spark.app.id", "")
-      val tmpDir = System.getProperty("java.io.tmpdir").split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
-      tmpDir
     } else if (conf.getenv("SPARK_LOCAL_DIRS") != null) {
       conf.getenv("SPARK_LOCAL_DIRS").split(",")
     } else if (conf.getenv("MESOS_DIRECTORY") != null && !shuffleServiceEnabled) {
