@@ -38,7 +38,7 @@ class LocalDirsSuite extends SparkFunSuite with BeforeAndAfter {
     assert(!new File("/NONEXISTENT_DIR").exists())
     val conf = new SparkConf(false)
       .set("spark.local.dir", s"/NONEXISTENT_PATH,${System.getProperty("java.io.tmpdir")}")
-    assert(new File(Utils.getLocalDir(conf)).exists())
+    assert(new File(Utils.getLocalDir(conf, "VM")).exists())
   }
 
   test("SPARK_LOCAL_DIRS override also affects driver") {
@@ -48,7 +48,7 @@ class LocalDirsSuite extends SparkFunSuite with BeforeAndAfter {
     // SPARK_LOCAL_DIRS will override it on both the driver and workers:
     val conf = new SparkConfWithEnv(Map("SPARK_LOCAL_DIRS" -> System.getProperty("java.io.tmpdir")))
       .set("spark.local.dir", "/NONEXISTENT_PATH")
-    assert(new File(Utils.getLocalDir(conf)).exists())
+    assert(new File(Utils.getLocalDir(conf, "VM")).exists())
   }
 
 }

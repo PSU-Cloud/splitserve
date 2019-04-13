@@ -435,14 +435,15 @@ private[spark] object Utils extends Logging {
       securityMgr: SecurityManager,
       hadoopConf: Configuration,
       timestamp: Long,
-      useCache: Boolean) {
+      useCache: Boolean,
+      executorType: String = "VM") {
     val fileName = decodeFileNameInURI(new URI(url))
     val targetFile = new File(targetDir, fileName)
     val fetchCacheEnabled = conf.getBoolean("spark.files.useFetchCache", defaultValue = true)
     if (useCache && fetchCacheEnabled) {
       val cachedFileName = s"${url.hashCode}${timestamp}_cache"
       val lockFileName = s"${url.hashCode}${timestamp}_lock"
-      val localDir = new File(getLocalDir(conf))
+      val localDir = new File(getLocalDir(conf, executorType))
       val lockFile = new File(localDir, lockFileName)
       val lockFileChannel = new RandomAccessFile(lockFile, "rw").getChannel()
       // Only one executor entry.
@@ -738,8 +739,8 @@ private[spark] object Utils extends Logging {
    * Some of these configuration options might be lists of multiple paths, but this method will
    * always return a single directory.
    */
-  def getLocalDir(conf: SparkConf): String = {
-    getOrCreateLocalRootDirs(conf)(0)
+  def getLocalDir(conf: SparkConf, executorType: String): String = {
+    getOrCreateLocalRootDirs(conf, executorType)(0)
   }
 
   private[spark] def isRunningInYarnContainer(conf: SparkConf): Boolean = {
@@ -757,11 +758,11 @@ private[spark] object Utils extends Logging {
    * So calling it multiple times with a different configuration will always return the same
    * set of directories.
    */
-  private[spark] def getOrCreateLocalRootDirs(conf: SparkConf): Array[String] = {
+  private[spark] def getOrCreateLocalRootDirs(conf: SparkConf, executorType: String): Array[String] = {
     if (localRootDirs == null) {
       this.synchronized {
         if (localRootDirs == null) {
-          localRootDirs = getOrCreateLocalRootDirsImpl(conf)
+          localRootDirs = getOrCreateLocalRootDirsImpl(conf, executorType)
         }
       }
     }
@@ -773,7 +774,7 @@ private[spark] object Utils extends Logging {
    * method does not create any directories on its own, it only encapsulates the
    * logic of locating the local directories according to deployment mode.
    */
-  def getConfiguredLocalDirs(conf: SparkConf): Array[String] = {
+  def getConfiguredLocalDirs(conf: SparkConf, executorType: String): Array[String] = {
     val shuffleServiceEnabled = conf.getBoolean("spark.shuffle.service.enabled", false)
     if (isRunningInYarnContainer(conf)) {
       // If we are in yarn mode, systems can have different disk layouts so we must set it
@@ -782,10 +783,12 @@ private[spark] object Utils extends Logging {
       // user has access to them.
       getYarnLocalDirs(conf).split(",")
     } else if (conf.getenv("SPARK_EXECUTOR_DIRS") != null) {
-      logInfo(s"AMAN: In case where we have SPARK_EXECUTOR_DIRS")
       conf.getenv("SPARK_EXECUTOR_DIRS").split(File.pathSeparator)
+    } else if (executorType == "LAMBDA") { 
+      val sparkApplicationId = conf.get("spark.app.id", "")
+      val tmpDir = System.getProperty("java.io.tmpdir").split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
+      tmpDir
     } else if (conf.getenv("SPARK_LOCAL_DIRS") != null) {
-      logInfo(s"AMAN: In case where we have SPARK_LOCAL_DIRS")
       conf.getenv("SPARK_LOCAL_DIRS").split(",")
     } else if (conf.getenv("MESOS_DIRECTORY") != null && !shuffleServiceEnabled) {
       // Mesos already creates a directory per Mesos task. Spark should use that directory
@@ -805,8 +808,8 @@ private[spark] object Utils extends Logging {
     }
   }
 
-  private def getOrCreateLocalRootDirsImpl(conf: SparkConf): Array[String] = {
-    getConfiguredLocalDirs(conf).flatMap { root =>
+  private def getOrCreateLocalRootDirsImpl(conf: SparkConf, executorType: String): Array[String] = {
+    getConfiguredLocalDirs(conf, executorType).flatMap { root =>
       try {
         val rootDir = new File(root)
         if (rootDir.exists || rootDir.mkdirs()) {

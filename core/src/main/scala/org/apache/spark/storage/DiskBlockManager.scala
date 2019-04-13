@@ -34,7 +34,7 @@ import org.apache.spark.util.{ShutdownHookManager, Utils}
  * Block files are hashed among the directories listed in spark.local.dir (or in
  * SPARK_LOCAL_DIRS, if it's set).
  */
-private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, deleteFilesOnStop: Boolean) extends Logging {
+private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, deleteFilesOnStop: Boolean, executorType: String) extends Logging {
   
   private[spark] val subDirsPerLocalDir = conf.getInt("spark.diskStore.subDirectories", 64)
 
@@ -51,7 +51,7 @@ private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, delet
   /* Create one local directory for each path mentioned in spark.local.dir; then, inside this
    * directory, create multiple subdirectories that we will hash files into, in order to avoid
    * having really large inodes at the top level. */
-  private[spark] val localDirs: Array[File] = createLocalDirs(conf)
+  private[spark] val localDirs: Array[File] = createLocalDirs(conf, executorType)
   if (localDirs.isEmpty) {
     logError("Failed to create any local dir.")
     System.exit(ExecutorExitCode.DISK_STORE_FAILED_TO_CREATE_DIR)
@@ -154,8 +154,8 @@ private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, delet
    * located inside configured local directories and won't
    * be deleted on JVM exit when using the external shuffle service.
    */
-  private def createLocalDirs(conf: SparkConf): Array[File] = {
-    Utils.getConfiguredLocalDirs(conf).flatMap { rootDir =>
+  private def createLocalDirs(conf: SparkConf, executorType: String): Array[File] = {
+    Utils.getConfiguredLocalDirs(conf, executorType).flatMap { rootDir =>
       try {
           val localDir = Utils.createDirectory(rootDir, s"executor-${executorId}")
           logInfo(s"Created local directory at $localDir")

@@ -445,11 +445,11 @@ private[deploy] class Worker(
           logInfo("Asked to launch executor %s/%d for %s".format(appId, execId, appDesc.name))
 
           // Create the executor's working directory
-          logInfo(s"AMAN: Worker: WorkDir = $workDir")
+          //logInfo(s"AMAN: Worker: WorkDir = $workDir")
 
           val executorDir = new File(workDir, appId + "/" + execId)
 
-          logInfo(s"AMAN: Worker: executorDir = $executorDir")
+          //logInfo(s"AMAN: Worker: executorDir = $executorDir")
           if (!executorDir.mkdirs()) {
             throw new IOException("Failed to create directory " + executorDir)
           }
@@ -458,7 +458,7 @@ private[deploy] class Worker(
           // SPARK_EXECUTOR_DIRS environment variable, and deleted by the Worker when the
           // application finishes.
           val appLocalDirs = appDirectories.getOrElse(appId,
-            Utils.getOrCreateLocalRootDirs(conf).map { dir =>
+            Utils.getOrCreateLocalRootDirs(conf, "VM").map { dir =>
               val appDir = Utils.createDirectory(dir, namePrefix = "executor")
               Utils.chmod700(appDir)
               appDir.getAbsolutePath()

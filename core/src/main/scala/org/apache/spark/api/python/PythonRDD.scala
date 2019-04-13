@@ -946,7 +946,7 @@ private[spark] class PythonBroadcast(@transient var path: String) extends Serial
    * Write data into disk, using randomly generated name.
    */
   private def readObject(in: ObjectInputStream): Unit = Utils.tryOrIOException {
-    val dir = new File(Utils.getLocalDir(SparkEnv.get.conf))
+    val dir = new File(Utils.getLocalDir(SparkEnv.get.conf, "VM"))
     val file = File.createTempFile("broadcast", "", dir)
     path = file.getAbsolutePath
     val out = new FileOutputStream(file)
