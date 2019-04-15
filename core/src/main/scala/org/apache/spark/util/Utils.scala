@@ -776,12 +776,8 @@ private[spark] object Utils extends Logging {
    */
   def getConfiguredLocalDirs(conf: SparkConf, executorType: String): Array[String] = {
     val shuffleServiceEnabled = conf.getBoolean("spark.shuffle.service.enabled", false)
-    val tmpBool = conf.getBoolean("spark.shuffle.hdfs.enabled", false)
-    logInfo(s"AMAN: getConfiguredLocalDirs: tmpBool value: $tmpBool")
-    if (conf.getBoolean("spark.shuffle.hfds.enabled", false)) {
+    if (conf.getBoolean("spark.shuffle.hdfs.enabled", false)) {
       val sparkApplicationId = conf.get("spark.app.id", "")
-      val tmp = System.getProperty("java.io.tmpdir")
-      logInfo(s"AMAN: getConfiguredLocalDirs java.io.tmpdir  = $tmp")
       val tmpDir = System.getProperty("java.io.tmpdir").split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
       tmpDir
     } else if (isRunningInYarnContainer(conf)) {
