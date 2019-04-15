@@ -445,15 +445,17 @@ private[deploy] class Worker(
           logInfo("Asked to launch executor %s/%d for %s".format(appId, execId, appDesc.name))
 
           // Create the executor's working directory
-          //logInfo(s"AMAN: Worker: WorkDir = $workDir")
+          logInfo(s"AMAN: Worker: WorkDir = $workDir")
+
 
           val executorDir = new File(workDir, appId + "/" + execId)
 
-          //logInfo(s"AMAN: Worker: executorDir = $executorDir")
           if (!executorDir.mkdirs()) {
-            throw new IOException("Failed to create directory " + executorDir)
+                 throw new IOException("Failed to create directory " + executorDir)
           }
 
+          logInfo(s"AMAN: Worker: executorDir = $executorDir")
+          
           // Create local dirs for the executor. These are passed to the executor via the
           // SPARK_EXECUTOR_DIRS environment variable, and deleted by the Worker when the
           // application finishes.
