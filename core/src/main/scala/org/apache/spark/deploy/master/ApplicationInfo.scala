@@ -26,6 +26,8 @@ import org.apache.spark.deploy.ApplicationDescription
 import org.apache.spark.rpc.RpcEndpointRef
 import org.apache.spark.util.Utils
 
+import org.apache.spark.internal.Logging
+
 private[spark] class ApplicationInfo(
     val startTime: Long,
     val id: String,
@@ -33,7 +35,7 @@ private[spark] class ApplicationInfo(
     val submitDate: Date,
     val driver: RpcEndpointRef,
     defaultCores: Int)
-  extends Serializable {
+  extends Serializable with Logging {
 
   @transient var state: ApplicationState.Value = _
   @transient var executors: mutable.HashMap[Int, ExecutorDesc] = _
@@ -68,13 +70,14 @@ private[spark] class ApplicationInfo(
   }
 
   private def newExecutorId(useID: Option[Int] = None): Int = {
+    logInfo(s"AMAN: newExecutorId: $nextExecutorId")
     useID match {
       case Some(id) =>
-        nextExecutorId = math.max(nextExecutorId, id + 1)
+        nextExecutorId = math.max(nextExecutorId, id + 2)
         id
       case None =>
         val id = nextExecutorId
-        nextExecutorId += 1
+        nextExecutorId += 2
         id
     }
   }

@@ -142,7 +142,7 @@ private[spark] class StandaloneSchedulerBackend(
   val s3SparkVersion = sc.conf.get("spark.lambda.spark.software.version", "LATEST")
   var numExecutorsExpected = 0
   var numExecutorsRegistered = new AtomicInteger(0)
-  var executorId = new AtomicInteger(0)
+  var executorId = new AtomicInteger(1)
   var numLambdaCallsPending = new AtomicInteger(0)
   // Mapping from executorId to Thread object which is currently in the Lambda RPC call
   var pendingLambdaRequests = new HashMap[String, Thread]
@@ -331,7 +331,7 @@ private[spark] class StandaloneSchedulerBackend(
       (1 to newExecutorsNeeded).foreach { x =>
         val hostname = sc.env.rpcEnv.address.host
         val port = sc.env.rpcEnv.address.port.toString
-        val currentExecutorId = executorId.addAndGet(1)
+        val currentExecutorId = executorId.addAndGet(2)
         val containerId = applicationId() + "_%08d".format(currentExecutorId)
 
         val javaPartialCommandLine = s"java -cp ${lambdaClasspath} " +
