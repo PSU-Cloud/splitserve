@@ -153,10 +153,10 @@ private[spark] class StandaloneSchedulerBackend(
   var lambdaContainerTimeoutSecs: Int = 0
 
   val clientConfig = new ClientConfiguration()
-  clientConfig.setClientExecutionTimeout(345678)
-  clientConfig.setConnectionTimeout(345679)
-  clientConfig.setRequestTimeout(345680)
-  clientConfig.setSocketTimeout(345681)
+  clientConfig.setClientExecutionTimeout(720000)
+  clientConfig.setConnectionTimeout(720000)
+  clientConfig.setRequestTimeout(720000)
+  clientConfig.setSocketTimeout(720000)
 
   val defaultClasspath = s"/tmp/lambda/spark/jars/*,/tmp/lambda/spark/conf/*"
   val lambdaClasspathStr = sc.conf.get("spark.lambda.classpath", defaultClasspath)
@@ -517,7 +517,11 @@ private[spark] class StandaloneSchedulerBackend(
   // AMAN: We probably don't need this function, we have to discuss the case
   // where if we don't have any initial executors on VMs, do we launch executors
   // on Lambdas, or wait for the cluster to have at least one VM
-  private val DEFAULT_NUMBER_EXECUTORS_LAMBDA = 2
+
+  // Currently, we don't wait for any VM executor. If currently no workers are 
+  // present, we can directly launch Lambda executors if other settings allow 
+  // for it.
+  private val DEFAULT_NUMBER_EXECUTORS_LAMBDA = 1
   private def getInitialTargetExecutorNumber(
                                       conf: SparkConf,
                                       numExecutors: Int = DEFAULT_NUMBER_EXECUTORS_LAMBDA): Int = {
