@@ -153,10 +153,10 @@ private[spark] class StandaloneSchedulerBackend(
   var lambdaContainerTimeoutSecs: Int = 0
 
   val clientConfig = new ClientConfiguration()
-  clientConfig.setClientExecutionTimeout(345678)
-  clientConfig.setConnectionTimeout(345679)
-  clientConfig.setRequestTimeout(345680)
-  clientConfig.setSocketTimeout(345681)
+  clientConfig.setClientExecutionTimeout(720000)
+  clientConfig.setConnectionTimeout(720000)
+  clientConfig.setRequestTimeout(720000)
+  clientConfig.setSocketTimeout(720000)
 
   val defaultClasspath = s"/tmp/lambda/spark/jars/*,/tmp/lambda/spark/conf/*"
   val lambdaClasspathStr = sc.conf.get("spark.lambda.classpath", defaultClasspath)
