@@ -32,7 +32,7 @@ object Main extends Logging {
   initializeLogIfNecessary(true)
 
   val conf = new SparkConf()
-  val rootDir = conf.getOption("spark.repl.classdir").getOrElse(Utils.getLocalDir(conf))
+  val rootDir = conf.getOption("spark.repl.classdir").getOrElse(Utils.getLocalDir(conf, "VM"))
   val outputDir = Utils.createTempDir(root = rootDir, namePrefix = "repl")
 
   var sparkContext: SparkContext = _

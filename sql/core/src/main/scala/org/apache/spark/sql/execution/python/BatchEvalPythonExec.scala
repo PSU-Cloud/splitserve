@@ -90,7 +90,7 @@ case class BatchEvalPythonExec(udfs: Seq[PythonUDF], output: Seq[Attribute], chi
       // The queue used to buffer input rows so we can drain it to
       // combine input with output from Python.
       val queue = HybridRowQueue(TaskContext.get().taskMemoryManager(),
-        new File(Utils.getLocalDir(SparkEnv.get.conf)), child.output.length)
+        new File(Utils.getLocalDir(SparkEnv.get.conf, "VM")), child.output.length)
       TaskContext.get().addTaskCompletionListener({ ctx =>
         queue.close()
       })
