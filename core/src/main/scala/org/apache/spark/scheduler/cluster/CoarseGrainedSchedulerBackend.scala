@@ -256,11 +256,11 @@ private val listenerBus = scheduler.sc.listenerBus
         }
 
     var workOffersVM = activeExecutorsVM.map { case (id, executorData) =>
-        new WorkerOffer(id, executorData.executorHost, executorData.freeCores)
+        new WorkerOffer(id, executorData.executorHost, executorData.freeCores, executorData.executorStartTime)
         }.toIndexedSeq
 
     var workOffersLambda = activeExecutorsLambda.map { case (id, executorData) =>
-        new WorkerOffer(id, executorData.executorHost, executorData.freeCores)
+        new WorkerOffer(id, executorData.executorHost, executorData.freeCores, executorData.executorStartTime)
         }.toIndexedSeq
 
     // AMAN_ATA: Making two function calls to propogate information
@@ -289,7 +289,7 @@ private val listenerBus = scheduler.sc.listenerBus
         val executorData = executorDataMap(executorId)
         if (executorData.executorType == "VM") {
         val workOffers = IndexedSeq(
-          new WorkerOffer(executorId, executorData.executorHost, executorData.freeCores))
+          new WorkerOffer(executorId, executorData.executorHost, executorData.freeCores, executorData.executorStartTime))
         launchTasks(scheduler.resourceOffers(workOffers, "VM"))
         }
 
@@ -298,7 +298,7 @@ private val listenerBus = scheduler.sc.listenerBus
         val executorDecommisioningInterval = conf.getTimeAsMs("spark.qubole.lambda.decommisioningInterval", "240s")
         if (executorElapsedTime < executorDecommisioningInterval) {
           val workOffers = IndexedSeq(
-            new WorkerOffer(executorId, executorData.executorHost, executorData.freeCores))
+            new WorkerOffer(executorId, executorData.executorHost, executorData.freeCores, executorData.executorStartTime))
           launchTasks(scheduler.resourceOffers(workOffers, "LAMBDA"))
         }
       }

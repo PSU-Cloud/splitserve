@@ -424,7 +424,8 @@ private[spark] class TaskSetManager(
       execId: String,
       host: String,
       maxLocality: TaskLocality.TaskLocality,
-      executorType: String)
+      executorType: String,
+      executorStartTime: Long)
     : Option[TaskDescription] =
   {
     val offerBlacklisted = taskSetBlacklistHelperOpt.exists { blacklist =>
@@ -436,7 +437,20 @@ private[spark] class TaskSetManager(
       val executeOneTask = conf.getBoolean("spark.scheduler.executor.executeOneTask", false)
       val ranTaskAlready = executeOneTask && hasExecutorRanTask(execId)
 
-    if (!isZombie && !offerBlacklisted && (executorType == "VM" || (executorType == "LAMBDA" && !ranTaskAlready))) {
+      //AMAN: This is the entry point for making offer to a task set, we want to check if an
+      //already running "LAMBDA" executor has not been running for more than 'spark.lambda.executor.timeout'.
+      //We want to do it over here so that we don't loose any already running task. Doing this
+      //over here ensures that we are doing this check between stages but one should be wary 
+      //very long running tasks/stages.
+
+      //AMAN: The code base has support to kill a Lambda Executor at the completion of a
+      //single task as well. By default we are killing Lambdas and stage boundaries.
+
+      val executorElapsedTime = clock.getTimeMillis() - executorStartTime
+      val lambdaExecutorTimeout = (conf.getTimeAsSeconds("spark.lambda.executor.timeout", "600s")) * 1000
+
+    if (!isZombie && !offerBlacklisted && (executorType == "VM" || (executorType == "LAMBDA" && !ranTaskAlready && 
+                                                                    executorElapsedTime < lambdaExecutorTimeout))) {
       val curTime = clock.getTimeMillis()
 
       var allowedLocality = maxLocality
@@ -500,6 +514,11 @@ private[spark] class TaskSetManager(
           taskName, index, serializedTask)
       }
     } else {
+      if (executorType == "LAMBDA" && executorElapsedTime >= lambdaExecutorTimeout) {
+         logInfo(s"LAMBDA executor ${execId} is already past its specified Timeout configuration," +
+                 s" so not scheduling task here also killing this executor")
+         sched.sc.killExecutor(execId)
+      } 
       None
     }
   }

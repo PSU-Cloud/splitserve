@@ -260,9 +260,10 @@ private[spark] class TaskSchedulerImpl(
     for (i <- 0 until shuffledOffers.size) {
       val execId = shuffledOffers(i).executorId
       val host = shuffledOffers(i).host
+      val executorStartTime = shuffledOffers(i).executorStartTime
       if (availableCpus(i) >= CPUS_PER_TASK) {
         try {
-          for (task <- taskSet.resourceOffer(execId, host, maxLocality, executorType)) {
+          for (task <- taskSet.resourceOffer(execId, host, maxLocality, executorType, executorStartTime)) {
             tasks(i) += task
             val tid = task.taskId
             taskIdToTaskSetManager(tid) = taskSet

@@ -82,7 +82,7 @@ private[spark] class LocalEndpoint(
   }
 
   def reviveOffers() {
-    val offers = IndexedSeq(new WorkerOffer(localExecutorId, localExecutorHostname, freeCores))
+    val offers = IndexedSeq(new WorkerOffer(localExecutorId, localExecutorHostname, freeCores, System.currentTimeMillis()))
     for (task <- scheduler.resourceOffers(offers, "VM").flatten) {
       freeCores -= scheduler.CPUS_PER_TASK
       executor.launchTask(executorBackend, taskId = task.taskId, attemptNumber = task.attemptNumber,

@@ -371,7 +371,7 @@ private[spark] abstract class MockBackend(
       exec.freeCores > 0
     }.map { exec =>
       WorkerOffer(executorId = exec.executorId, host = exec.host,
-        cores = exec.freeCores)
+        cores = exec.freeCores, 123456789)
     }.toIndexedSeq
   }
 
