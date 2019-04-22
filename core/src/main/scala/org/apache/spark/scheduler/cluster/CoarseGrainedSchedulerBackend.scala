@@ -342,9 +342,10 @@ private val listenerBus = scheduler.sc.listenerBus
 
    // Remove a disconnected slave from the cluster
     private def removeExecutor(executorId: String, reason: ExecutorLossReason): Unit = {
-      logInfo(s"Asked to remove executor $executorId with reason $reason")
+      logInfo(s"AMAN: Asked to remove executor $executorId with reason $reason")
       executorDataMap.get(executorId) match {
         case Some(executorInfo) =>
+          logInfo("AMAN: removeExecutor, in FIRST Case, removing executor from DataMap")
           // This must be synchronized because variables mutated
           // in this block are read when requesting executors
           val killed = CoarseGrainedSchedulerBackend.this.synchronized {
@@ -646,11 +647,11 @@ private val listenerBus = scheduler.sc.listenerBus
 
       // If an executor is already pending to be removed, do not kill it again (SPARK-9795)
       // If this executor is busy, do not kill it unless we are told to force kill it (SPARK-9552)
-      val executorsVMToKill = knownExecutors
+      val executorsToKill = knownExecutors
         .filter { id => !executorsPendingToRemove.contains(id) }
         .filter { id => force || !scheduler.isExecutorBusy(id) }
         .filter { id => executorDataMap(id).executorType == "VM" }
-      executorsVMToKill.foreach { id => executorsPendingToRemove(id) = !replace }
+      executorsToKill.foreach { id => executorsPendingToRemove(id) = !replace }
 
       val executorsLambdaToKill = knownExecutors
         .filter { id => !executorsPendingToRemove.contains(id) }
@@ -658,15 +659,17 @@ private val listenerBus = scheduler.sc.listenerBus
         .filter { id => executorDataMap(id).executorType == "LAMBDA" }
       executorsLambdaToKill.foreach { id => executorsPendingToRemove(id) = !replace }
 
-      logInfo(s"AMAN: Actual list of executor(s) to be killed is, for VM:  ${executorsVMToKill.mkString(", ")}, and for Lambdas: ${executorsLambdaToKill.mkString(", ")}")
+      logInfo(s"AMAN: Actual list of executor(s) to be killed is, VM =>  ${executorsToKill.mkString(", ")}  and LAMBDA => ${executorsLambdaToKill.mkString(", ")}")
 
       // If we do not wish to replace the executors we kill, sync the target number of executors
       // with the cluster manager to avoid allocating new ones. When computing the new target,
       // take into account executors that are pending to be added or removed.
 
-      //AMAN: TODO look into this case.
+      // AMAN: TODO look into this case, see if we want to replace this with 
+      // Lambda request
       val adjustTotalExecutors =
         if (!replace) {
+          //logInfo("AMAN: adjustTotalExecutors, making a function call to request LAMBDAS")
           doRequestTotalExecutors(
             numExistingExecutors + numPendingExecutors - executorsPendingToRemove.size)
         } else {
@@ -676,25 +679,27 @@ private val listenerBus = scheduler.sc.listenerBus
 
       val adjustTotalExecutorsCopy = adjustTotalExecutors
 
-      val killExecutorsVM: Boolean => Future[Boolean] =
-        if (!executorsVMToKill.isEmpty) {
-          _ => doKillExecutors(executorsVMToKill)
+      //logInfo(s"AMAN: Executors to kill List -> $executorsLambdaToKill")
+      val killExecutors: Boolean => Future[Boolean] =
+        if (!executorsToKill.isEmpty) {
+          _ => doKillExecutors(executorsToKill)
         } else {
           _ => Future.successful(false)
         }
 
       val killExecutorsLambda: Boolean => Future[Boolean] =
         if (!executorsLambdaToKill.isEmpty) {
+               logInfo(s"AMAN: In the IF condition to specify that the function call is definitely being made for $executorsLambdaToKill")
           _ => doKillExecutorsLambda(executorsLambdaToKill)
         } else {
           _ => Future.successful(false)
         }
 
-      val killResponseVM = adjustTotalExecutors.flatMap(killExecutorsVM)(ThreadUtils.sameThread)
+      val killResponse = adjustTotalExecutors.flatMap(killExecutors)(ThreadUtils.sameThread)
       val killResponseLambda = adjustTotalExecutorsCopy.flatMap(killExecutorsLambda)(ThreadUtils.sameThread)
 
-      killResponseVM.flatMap(killSuccessful =>
-        Future.successful (if (killSuccessful) executorsVMToKill else Seq.empty[String])
+      killResponse.flatMap(killSuccessful =>
+        Future.successful (if (killSuccessful) executorsToKill else Seq.empty[String])
       )(ThreadUtils.sameThread)
 
       killResponseLambda.flatMap(killSuccessful =>
@@ -709,12 +714,15 @@ private val listenerBus = scheduler.sc.listenerBus
 * @return whether the kill request is acknowledged.
 */
 
-// AMAN: 2 different defintions for Lambda and VM respectivelu
+// AMAN: 2 different defintions for Lambda and VM respectively
 
  protected def doKillExecutorsLambda(executorIds: Seq[String]): Future[Boolean] = {
       val reason = "Driver asked to stop executor"
+      //logInfo(s"AMAN: doKillExecutorsLambda: in here to kill some Lambda executors: $executorIds")
+      
       executorIds.foreach {
         executorId => {
+          //logInfo(s"AMAN: doKillExecutorsLambda: Killing executor - $executorId")
           executorDataMap.get(executorId).foreach(_.executorEndpoint.send(StopExecutor))
           removeExecutor(executorId, new ExecutorLossReason(reason))
         }

@@ -514,11 +514,11 @@ private[spark] class TaskSetManager(
           taskName, index, serializedTask)
       }
     } else {
-      if (executorType == "LAMBDA" && executorElapsedTime >= lambdaExecutorTimeout) {
+      /*if (executorType == "LAMBDA" && executorElapsedTime >= lambdaExecutorTimeout) {
          logInfo(s"LAMBDA executor ${execId} is already past its specified Timeout configuration," +
                  s" so not scheduling task here also killing this executor")
          sched.sc.killExecutor(execId)
-      } 
+      }*/
       None
     }
   }

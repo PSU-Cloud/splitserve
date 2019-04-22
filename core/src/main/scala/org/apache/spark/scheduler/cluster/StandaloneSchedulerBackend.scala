@@ -328,10 +328,12 @@ private[spark] class StandaloneSchedulerBackend(
     Future {
       // TODO: Can we launch in parallel?
       // TODO: Can we track each thread separately and audit
+      logInfo(s"AMAN: launchExecutorsOnLambda -> newExecutorsNeeded = $newExecutorsNeeded")
       (1 to newExecutorsNeeded).foreach { x =>
         val hostname = sc.env.rpcEnv.address.host
         val port = sc.env.rpcEnv.address.port.toString
         val currentExecutorId = executorId.addAndGet(2)
+        logInfo(s"AMAN: currentExecutorId requested -> $currentExecutorId")
         val containerId = applicationId() + "_%08d".format(currentExecutorId)
 
         val javaPartialCommandLine = s"java -cp ${lambdaClasspath} " +
@@ -376,9 +378,9 @@ private[spark] class StandaloneSchedulerBackend(
               implicit val formats = Serialization.formats(NoTypeHints)
               val payload: String = Serialization.write(request)
               invokeRequest.setPayload(payload)
-              logDebug(s"LAMBDA: 9050.2: request: ${payload}")
+              //logInfo(s"AMAN: 9050.2: request: ${payload}")
               val invokeResponse = lambdaClient.invoke(invokeRequest)
-              logDebug(s"LAMBDA: 9051: Returned from lambda $executorId: $invokeResponse")
+              //logInfo(s"AMAN: 9051: Returned from lambda $executorId: $invokeResponse")
               val invokeResponsePayload: String =
                 new String(invokeResponse.getPayload.array, java.nio.charset.StandardCharsets.UTF_8)
               logDebug(s"LAMBDA: 9051.1: Returned from lambda $executorId: $invokeResponsePayload")
@@ -418,9 +420,9 @@ private[spark] class StandaloneSchedulerBackend(
   override final def doRequestTotalExecutors_lambda(requestedTotal: Int): Future[Boolean] = {
     // TODO: Check again against numExecutorsExpected ??
     // We assume that all pending lambda calls are live lambdas and are fine
-    logInfo("AMAN: Function call in doRequestTotalExecutors_lambda")
+    logInfo(s"AMAN: Function call in doRequestTotalExecutors_lambda -> requestedTotal = $requestedTotal")
     val newExecutorsNeeded = requestedTotal - numLambdaCallsPending.get()
-    logDebug(s"LAMBDA: 9001: doRequestTotalExecutors: ${newExecutorsNeeded} = " +
+    logInfo(s"AMAN: 9001: doRequestTotalExecutors: ${newExecutorsNeeded} = " +
       s"${requestedTotal} - ${numLambdaCallsPending.get}")
     if (newExecutorsNeeded <= 0) {
       return Future { true }
@@ -439,11 +441,11 @@ private[spark] class StandaloneSchedulerBackend(
 
   override def doKillExecutorsLambda(executorIds: Seq[String]): Future[Boolean] = {
     // TODO: Right now not implemented
-    logDebug(s"LAMBDA: 10200: doKillExecutors: $executorIds")
+    logInfo(s"AMAN: 10200: doKillExecutors: $executorIds")
     val (activeExecutors, pendingExecutors) =
       executorIds.partition(executorId => !pendingLambdaRequests.contains(executorId))
     Future {
-      pendingExecutors.foreach { x =>
+      /*pendingExecutors.foreach { x =>
         if (pendingLambdaRequests.contains(x)) {
           logDebug(s"LAMBDA: 10201: doKillExecutors: Interrupting $x")
           val thread = pendingLambdaRequests(x)
@@ -451,9 +453,10 @@ private[spark] class StandaloneSchedulerBackend(
           thread.interrupt()
           logDebug(s"LAMBDA: 10202: ${thread.getState}")
         }
-      }
+      }*/
 
-      super.doKillExecutorsLambda(activeExecutors)
+      //logInfo(s"AMAN: List for executors getting passed to super function -> $executorIds")
+      super.doKillExecutorsLambda(executorIds)
       true
     }
   }
