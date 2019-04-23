@@ -245,7 +245,7 @@ private val listenerBus = scheduler.sc.listenerBus
    }
 
    private def makeOffers() {
-    val executorDecommisioningInterval = conf.getTimeAsMs("spark.qubole.lambda.decommisioningInterval", "240s")
+    val executorDecommisioningInterval = conf.getTimeAsSeconds("spark.lambda.executor.timeout", "300s") * 1000
     val activeExecutorsVM = executorDataMap.filter{ case (id, executorData) => executorData.executorType == "VM"  && (executorIsAlive(id))}
 
     val executorsLambda = executorDataMap.filter { case (id, executorData) => executorData.executorType == "LAMBDA" && (executorIsAlive(id))}
@@ -295,7 +295,7 @@ private val listenerBus = scheduler.sc.listenerBus
 
         else {
         val executorElapsedTime = System.currentTimeMillis() - executorData.executorStartTime
-        val executorDecommisioningInterval = conf.getTimeAsMs("spark.qubole.lambda.decommisioningInterval", "240s")
+        val executorDecommisioningInterval = conf.getTimeAsSeconds("spark.lambda.executor.timeout", "300s") * 1000
         if (executorElapsedTime < executorDecommisioningInterval) {
           val workOffers = IndexedSeq(
             new WorkerOffer(executorId, executorData.executorHost, executorData.freeCores, executorData.executorStartTime))
