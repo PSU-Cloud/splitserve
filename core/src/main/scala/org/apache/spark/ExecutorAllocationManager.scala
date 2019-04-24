@@ -294,7 +294,7 @@ private[spark] class ExecutorAllocationManager(
     }
 
     if (!executorIdsToBeRemoved.isEmpty) {
-      logInfo(s"AMAN: Current executors marked to be removed -> $executorIdsToBeRemoved")
+      //logInfo(s"AMAN: Current executors marked to be removed -> $executorIdsToBeRemoved")
     }
     if (executorIdsToBeRemoved.nonEmpty) {
       removeExecutors(executorIdsToBeRemoved)
@@ -333,14 +333,14 @@ private[spark] class ExecutorAllocationManager(
 
       // If the new target has not changed, avoid sending a message to the cluster manager
       if (numExecutorsTarget < oldNumExecutorsTarget) {
-        logInfo("AMAN: UpdateAndSync Called within SECOND IF")
+        //logInfo("AMAN: UpdateAndSync Called within SECOND IF")
         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
         logDebug(s"Lowering target number of executors to $numExecutorsTarget (previously " +
           s"$oldNumExecutorsTarget) because not all requested executors are actually needed")
       }
       numExecutorsTarget - oldNumExecutorsTarget
     } else if (addTime != NOT_SET && now >= addTime) {
-      logInfo(s"AMAN: UpdateAndSync called within ELSE IF, maxNeeded = $maxNeeded")
+      //logInfo(s"AMAN: UpdateAndSync called within ELSE IF, maxNeeded = $maxNeeded")
       val delta = addExecutors(maxNeeded)
       logDebug(s"Starting timer to add more executors (to " +
         s"expire in $sustainedSchedulerBacklogTimeoutS seconds)")
@@ -363,8 +363,12 @@ private[spark] class ExecutorAllocationManager(
   private def addExecutors(maxNumExecutorsNeeded: Int): Int = {
     // Do not request more executors if it would put our target over the upper bound
     if (numExecutorsTarget >= maxNumExecutors) {
-      logDebug(s"Not adding executors because our current target total " +
-        s"is already $numExecutorsTarget (limit $maxNumExecutors)")
+      logDebug(s"AMAN: Not adding executors because our current target total " +
+        s"is already $numExecutorsTarget (limit $maxNumExecutors), current executors = ${executorIds.size}")
+      //logInfo("AMAN: Making another call to request Lambda executors")
+      if (executorIds.size < maxNumExecutors) {
+         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
+      }
       numExecutorsToAdd = 1
       return 0
     }
@@ -382,9 +386,16 @@ private[spark] class ExecutorAllocationManager(
 
     val delta = numExecutorsTarget - oldNumExecutorsTarget
 
+    // logInfo(s"AMAN: maxNumExecutorsNeeded = $maxNumExecutorsNeeded")
+    // logInfo(s"AMAN: numExecutorsTarget = $numExecutorsTarget, maxNumExecutors = $maxNumExecutors")
+    // logInfo(s"AMAN: delta = $delta")
+
     // If our target has not changed, do not send a message
     // to the cluster manager and reset our exponential growth
     if (delta == 0) {
+      if (executorIds.size < maxNumExecutorsNeeded) {
+         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
+      }
       numExecutorsToAdd = 1
       return 0
     }
@@ -424,7 +435,7 @@ private[spark] class ExecutorAllocationManager(
     var newExecutorTotal = numExistingExecutors
     executors.foreach { executorIdToBeRemoved =>
       if ((executorIds.get(executorIdToBeRemoved) == "VM") && (newExecutorTotal - 1 < minNumExecutors)) {
-        logInfo(s"AMAN: Not removing idle VM executor $executorIdToBeRemoved because there are only " +
+        logDebug(s"AMAN: Not removing idle VM executor $executorIdToBeRemoved because there are only " +
           s"$newExecutorTotal executor(s) left (limit $minNumExecutors)")
       } else if (canBeKilled(executorIdToBeRemoved)) {
         executorIdsToBeRemoved += executorIdToBeRemoved
@@ -511,7 +522,9 @@ private[spark] class ExecutorAllocationManager(
    */
   private def onExecutorRemoved(executorId: String): Unit = synchronized {
     if (executorIds.contains(executorId)) {
+      // logInfo(s"AMAN: in ExecutorRemoved private def, executorIds.size = ${executorIds.size}")
       executorIds.remove(executorId)
+      // logInfo(s"AMAN: in ExecutorRemoved after removing executor, executorIds.size = ${executorIds.size}")
       removeTimes.remove(executorId)
       logInfo(s"Existing executor $executorId has been removed (new total is ${executorIds.size})")
       if (executorsPendingToRemove.contains(executorId)) {
@@ -568,10 +581,10 @@ private[spark] class ExecutorAllocationManager(
             now + executorIdleTimeoutS * 1000
           }
         }
-        logInfo(s"AMAN: Now = $now, executorIdleTimeourS = $executorIdleTimeoutS, timeout = $timeout")
+        // logInfo(s"AMAN: Now = $now, executorIdleTimeourS = $executorIdleTimeoutS, timeout = $timeout")
         val realTimeout = if (timeout <= 0) Long.MaxValue else timeout // overflow
         removeTimes(executorId) = realTimeout
-        logInfo(s"AMAN: Starting idle timer for $executorId because there are no more tasks " +
+        logDebug(s"Starting idle timer for $executorId because there are no more tasks " +
           s"scheduled to run on the executor (to expire in ${(realTimeout - now)/1000} seconds)")
       }
     } else {
@@ -730,6 +743,7 @@ private[spark] class ExecutorAllocationManager(
     }
 
     override def onExecutorRemoved(executorRemoved: SparkListenerExecutorRemoved): Unit = {
+      logInfo(s"AMAN: in ExecutorRemoved with ListenerEvent")
       allocationManager.onExecutorRemoved(executorRemoved.executorId)
     }
 

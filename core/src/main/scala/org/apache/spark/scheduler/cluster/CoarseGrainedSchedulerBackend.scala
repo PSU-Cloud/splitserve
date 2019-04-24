@@ -234,7 +234,7 @@ private val listenerBus = scheduler.sc.listenerBus
           // between the driver and the executor may be still alive so that the executor won't exit
           // automatically, so try to tell the executor to stop itself. See SPARK-13519.
           executorDataMap.get(executorId).foreach(_.executorEndpoint.send(StopExecutor))
-          logInfo(s"AMAN: In receiveAndReply, case RemoveExecutor, ID: $executorId and Reason: $reason")
+          // logInfo(s"AMAN: In receiveAndReply, case RemoveExecutor, ID: $executorId and Reason: $reason")
           removeExecutor(executorId, reason)
           context.reply(true)
 
@@ -342,10 +342,10 @@ private val listenerBus = scheduler.sc.listenerBus
 
    // Remove a disconnected slave from the cluster
     private def removeExecutor(executorId: String, reason: ExecutorLossReason): Unit = {
-      logInfo(s"AMAN: Asked to remove executor $executorId with reason $reason")
+      // logInfo(s"AMAN: Asked to remove executor $executorId with reason $reason")
       executorDataMap.get(executorId) match {
         case Some(executorInfo) =>
-          logInfo("AMAN: removeExecutor, in FIRST Case, removing executor from DataMap")
+          // logInfo("AMAN: removeExecutor, in FIRST Case, removing executor from DataMap")
           // This must be synchronized because variables mutated
           // in this block are read when requesting executors
           val killed = CoarseGrainedSchedulerBackend.this.synchronized {
@@ -541,7 +541,7 @@ private val listenerBus = scheduler.sc.listenerBus
        numExistingExecutors + numPendingExecutors - executorsPendingToRemove.size)
      } else {
      doRequestTotalExecutors_lambda(
-       numExistingExecutors + numPendingExecutors - executorsPendingToRemove.size)
+       numExistingExecutors + numPendingExecutors - executorsPendingToRemove.size, executorDataMap.size)
      }
    }
 
@@ -585,7 +585,9 @@ private val listenerBus = scheduler.sc.listenerBus
       if (executorType == "VM") {
         doRequestTotalExecutors(numExecutors)
       } else {
-        doRequestTotalExecutors_lambda(numExecutors)
+        val currentTotalExecutors = executorDataMap.size
+        // logInfo(s"AMAN: currentTotalExecutors = $currentTotalExecutors, requested = $numExecutors")
+        doRequestTotalExecutors_lambda(numExecutors, currentTotalExecutors)
       }
     }
 
@@ -607,7 +609,7 @@ private val listenerBus = scheduler.sc.listenerBus
   protected def doRequestTotalExecutors(requestedTotal: Int): Future[Boolean] =
     Future.successful(false)
 
-  protected def doRequestTotalExecutors_lambda(requestedTotal: Int): Future[Boolean] =
+  protected def doRequestTotalExecutors_lambda(requestedTotal: Int, currentTotalExecutors: Int): Future[Boolean] =
     Future.successful(false)
 
   /**
