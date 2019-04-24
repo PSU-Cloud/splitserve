@@ -27,8 +27,8 @@ import org.apache.spark.scheduler._
 class StorageStatusListenerSuite extends SparkFunSuite {
   private val bm1 = BlockManagerId("big", "dog", 1)
   private val bm2 = BlockManagerId("fat", "duck", 2)
-  private val taskInfo1 = new TaskInfo(0, 0, 0, 0, "big", "dog", TaskLocality.ANY, false)
-  private val taskInfo2 = new TaskInfo(0, 0, 0, 0, "fat", "duck", TaskLocality.ANY, false)
+  private val taskInfo1 = new TaskInfo(0, 0, 0, 0, "big", "dog", TaskLocality.ANY, false, "VM")
+  private val taskInfo2 = new TaskInfo(0, 0, 0, 0, "fat", "duck", TaskLocality.ANY, false, "VM")
   private val conf = new SparkConf()
 
   test("block manager added/removed") {

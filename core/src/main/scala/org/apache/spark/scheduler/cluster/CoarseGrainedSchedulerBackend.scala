@@ -197,7 +197,7 @@ private val listenerBus = scheduler.sc.listenerBus
      context.reply(true)
      logDebug("LAMBDA: 3004: RegisterExecutor")
      val event =
-       SparkListenerExecutorAdded(System.currentTimeMillis(), executorId, data)
+       SparkListenerExecutorAdded(System.currentTimeMillis(), executorId, data, executorType)
      logInfo(s"LAMBDA: 3005: RegisterExecutor: $event")
      listenerBus.post(event)
      logDebug("LAMBDA: 3006: RegisterExecutor")

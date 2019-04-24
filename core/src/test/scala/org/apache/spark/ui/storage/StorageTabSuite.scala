@@ -33,8 +33,8 @@ class StorageTabSuite extends SparkFunSuite with LocalSparkContext with BeforeAn
   private val memAndDisk = StorageLevel.MEMORY_AND_DISK
   private val memOnly = StorageLevel.MEMORY_ONLY
   private val none = StorageLevel.NONE
-  private val taskInfo = new TaskInfo(0, 0, 0, 0, "big", "dog", TaskLocality.ANY, false)
-  private val taskInfo1 = new TaskInfo(1, 1, 1, 1, "big", "cat", TaskLocality.ANY, false)
+  private val taskInfo = new TaskInfo(0, 0, 0, 0, "big", "dog", TaskLocality.ANY, false, "VM")
+  private val taskInfo1 = new TaskInfo(1, 1, 1, 1, "big", "cat", TaskLocality.ANY, false, "VM")
   private def rddInfo0 = new RDDInfo(0, "freedom", 100, memOnly, Seq(10))
   private def rddInfo1 = new RDDInfo(1, "hostage", 200, memOnly, Seq(10))
   private def rddInfo2 = new RDDInfo(2, "sanity", 300, memAndDisk, Seq(10))

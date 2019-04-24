@@ -74,7 +74,7 @@ class StagePageSuite extends SparkFunSuite with LocalSparkContext {
     // Simulate two tasks to test PEAK_EXECUTION_MEMORY correctness
     (1 to 2).foreach {
       taskId =>
-        val taskInfo = new TaskInfo(taskId, taskId, 0, 0, "0", "localhost", TaskLocality.ANY, false)
+        val taskInfo = new TaskInfo(taskId, taskId, 0, 0, "0", "localhost", TaskLocality.ANY, false, "VM")
         jobListener.onStageSubmitted(SparkListenerStageSubmitted(stageInfo))
         jobListener.onTaskStart(SparkListenerTaskStart(0, 0, taskInfo))
         taskInfo.markFinished(TaskState.FINISHED)

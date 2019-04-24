@@ -129,8 +129,8 @@ private[spark] class ExecutorAllocationManager(
   // Executors that have been requested to be removed but have not been killed yet
   private val executorsPendingToRemove = new mutable.HashSet[String]
 
-  // All known executors
-  private val executorIds = new mutable.HashSet[String]
+  // All known executors along with their type
+  private val executorIds = new mutable.HashMap[String, String]
 
   // A timestamp of when an addition should be triggered, or NOT_SET if it is not set
   // This is set when pending tasks are added but not scheduled yet
@@ -292,6 +292,10 @@ private[spark] class ExecutorAllocationManager(
       }
       !expired
     }
+
+    if (!executorIdsToBeRemoved.isEmpty) {
+      logInfo(s"AMAN: Current executors marked to be removed -> $executorIdsToBeRemoved")
+    }
     if (executorIdsToBeRemoved.nonEmpty) {
       removeExecutors(executorIdsToBeRemoved)
     }
@@ -329,14 +333,14 @@ private[spark] class ExecutorAllocationManager(
 
       // If the new target has not changed, avoid sending a message to the cluster manager
       if (numExecutorsTarget < oldNumExecutorsTarget) {
-        //logInfo("AMAN: UpdateAndSync Called within SECOND IF")
+        logInfo("AMAN: UpdateAndSync Called within SECOND IF")
         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
         logDebug(s"Lowering target number of executors to $numExecutorsTarget (previously " +
           s"$oldNumExecutorsTarget) because not all requested executors are actually needed")
       }
       numExecutorsTarget - oldNumExecutorsTarget
     } else if (addTime != NOT_SET && now >= addTime) {
-      //logInfo("AMAN: UpdateAndSync called within ELSE IF")
+      logInfo(s"AMAN: UpdateAndSync called within ELSE IF, maxNeeded = $maxNeeded")
       val delta = addExecutors(maxNeeded)
       logDebug(s"Starting timer to add more executors (to " +
         s"expire in $sustainedSchedulerBacklogTimeoutS seconds)")
@@ -419,8 +423,8 @@ private[spark] class ExecutorAllocationManager(
 
     var newExecutorTotal = numExistingExecutors
     executors.foreach { executorIdToBeRemoved =>
-      if (newExecutorTotal - 1 < minNumExecutors) {
-        logDebug(s"Not removing idle executor $executorIdToBeRemoved because there are only " +
+      if ((executorIds.get(executorIdToBeRemoved) == "VM") && (newExecutorTotal - 1 < minNumExecutors)) {
+        logInfo(s"AMAN: Not removing idle VM executor $executorIdToBeRemoved because there are only " +
           s"$newExecutorTotal executor(s) left (limit $minNumExecutors)")
       } else if (canBeKilled(executorIdToBeRemoved)) {
         executorIdsToBeRemoved += executorIdToBeRemoved
@@ -487,14 +491,15 @@ private[spark] class ExecutorAllocationManager(
   /**
    * Callback invoked when the specified executor has been added.
    */
-  private def onExecutorAdded(executorId: String): Unit = synchronized {
+  private def onExecutorAdded(executorId: String, executorType: String): Unit = synchronized {
+    //logInfo("AMAN: onExecutorAdded Private Def called")
     if (!executorIds.contains(executorId)) {
-      executorIds.add(executorId)
+      executorIds.put(executorId, executorType)
       // If an executor (call this executor X) is not removed because the lower bound
       // has been reached, it will no longer be marked as idle. When new executors join,
       // however, we are no longer at the lower bound, and so we must mark executor X
       // as idle again so as not to forget that it is a candidate for removal. (see SPARK-4951)
-      executorIds.filter(listener.isExecutorIdle).foreach(onExecutorIdle)
+      executorIds.filter{ case(executorId, executorType) => listener.isExecutorIdle(executorId)}.foreach{ case(executorId, executorType) => onExecutorIdle(executorId)}
       logInfo(s"New executor $executorId has registered (new total is ${executorIds.size})")
     } else {
       logWarning(s"Duplicate executor $executorId has registered")
@@ -563,9 +568,10 @@ private[spark] class ExecutorAllocationManager(
             now + executorIdleTimeoutS * 1000
           }
         }
+        logInfo(s"AMAN: Now = $now, executorIdleTimeourS = $executorIdleTimeoutS, timeout = $timeout")
         val realTimeout = if (timeout <= 0) Long.MaxValue else timeout // overflow
         removeTimes(executorId) = realTimeout
-        logDebug(s"Starting idle timer for $executorId because there are no more tasks " +
+        logInfo(s"AMAN: Starting idle timer for $executorId because there are no more tasks " +
           s"scheduled to run on the executor (to expire in ${(realTimeout - now)/1000} seconds)")
       }
     } else {
@@ -658,14 +664,14 @@ private[spark] class ExecutorAllocationManager(
       val taskId = taskStart.taskInfo.taskId
       val taskIndex = taskStart.taskInfo.index
       val executorId = taskStart.taskInfo.executorId
-
+      val executorType = taskStart.taskInfo.executorType
       allocationManager.synchronized {
         numRunningTasks += 1
         // This guards against the race condition in which the `SparkListenerTaskStart`
         // event is posted before the `SparkListenerBlockManagerAdded` event, which is
         // possible because these events are posted in different threads. (see SPARK-4951)
         if (!allocationManager.executorIds.contains(executorId)) {
-          allocationManager.onExecutorAdded(executorId)
+          allocationManager.onExecutorAdded(executorId, executorType)
         }
 
         // If this is the last pending task, mark the scheduler queue as empty
@@ -692,6 +698,7 @@ private[spark] class ExecutorAllocationManager(
           executorIdToTaskIds(executorId) -= taskId
           if (executorIdToTaskIds(executorId).isEmpty) {
             executorIdToTaskIds -= executorId
+            logInfo(s"AMAN: No tasks are running on executor ${executorId}, marking this as idle")
             allocationManager.onExecutorIdle(executorId)
           }
         }
@@ -709,13 +716,15 @@ private[spark] class ExecutorAllocationManager(
     }
 
     override def onExecutorAdded(executorAdded: SparkListenerExecutorAdded): Unit = {
+      //logInfo("AMAN: onExecutorAdded with SparkListenerExecutorAdded called")
       val executorId = executorAdded.executorId
+      val executorType = executorAdded.executorType
       if (executorId != SparkContext.DRIVER_IDENTIFIER) {
         // This guards against the race condition in which the `SparkListenerTaskStart`
         // event is posted before the `SparkListenerBlockManagerAdded` event, which is
         // possible because these events are posted in different threads. (see SPARK-4951)
         if (!allocationManager.executorIds.contains(executorId)) {
-          allocationManager.onExecutorAdded(executorId)
+          allocationManager.onExecutorAdded(executorId, executorType)
         }
       }
     }

@@ -2187,13 +2187,13 @@ class DAGSchedulerSuite extends SparkFunSuite with LocalSparkContext with Timeou
   // Nothing in this test should break if the task info's fields are null, but
   // OutputCommitCoordinator requires the task info itself to not be null.
   private def createFakeTaskInfo(): TaskInfo = {
-    val info = new TaskInfo(0, 0, 0, 0L, "", "", TaskLocality.ANY, false)
+    val info = new TaskInfo(0, 0, 0, 0L, "", "", TaskLocality.ANY, false, "VM")
     info.finishTime = 1  // to prevent spurious errors in JobProgressListener
     info
   }
 
   private def createFakeTaskInfoWithId(taskId: Long): TaskInfo = {
-    val info = new TaskInfo(taskId, 0, 0, 0L, "", "", TaskLocality.ANY, false)
+    val info = new TaskInfo(taskId, 0, 0, 0L, "", "", TaskLocality.ANY, false, "VM")
     info.finishTime = 1  // to prevent spurious errors in JobProgressListener
     info
   }

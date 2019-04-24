@@ -628,7 +628,7 @@ private[spark] object JsonProtocol {
     val time = (json \ "Timestamp").extract[Long]
     val executorId = (json \ "Executor ID").extract[String]
     val executorInfo = executorInfoFromJson(json \ "Executor Info")
-    SparkListenerExecutorAdded(time, executorId, executorInfo)
+    SparkListenerExecutorAdded(time, executorId, executorInfo, "VM")
   }
 
   def executorRemovedFromJson(json: JValue): SparkListenerExecutorRemoved = {
@@ -698,6 +698,7 @@ private[spark] object JsonProtocol {
     val host = (json \ "Host").extract[String]
     val taskLocality = TaskLocality.withName((json \ "Locality").extract[String])
     val speculative = (json \ "Speculative").extractOpt[Boolean].getOrElse(false)
+    val executorType = "VM" //AMAN: Should add logic here to get different LAMBDA
     val gettingResultTime = (json \ "Getting Result Time").extract[Long]
     val finishTime = (json \ "Finish Time").extract[Long]
     val failed = (json \ "Failed").extract[Boolean]
@@ -708,7 +709,7 @@ private[spark] object JsonProtocol {
     }
 
     val taskInfo =
-      new TaskInfo(taskId, index, attempt, launchTime, executorId, host, taskLocality, speculative)
+      new TaskInfo(taskId, index, attempt, launchTime, executorId, host, taskLocality, speculative, executorType)
     taskInfo.gettingResultTime = gettingResultTime
     taskInfo.finishTime = finishTime
     taskInfo.failed = failed

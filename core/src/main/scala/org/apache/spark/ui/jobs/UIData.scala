@@ -168,7 +168,8 @@ private[spark] object UIData {
         executorId = taskInfo.executorId,
         host = taskInfo.host,
         taskLocality = taskInfo.taskLocality,
-        speculative = taskInfo.speculative
+        speculative = taskInfo.speculative,
+        executorType = "VM"
       )
       newTaskInfo.gettingResultTime = taskInfo.gettingResultTime
       newTaskInfo.accumulables ++= taskInfo.accumulables.filter {
