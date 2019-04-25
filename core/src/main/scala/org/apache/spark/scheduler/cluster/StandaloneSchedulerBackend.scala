@@ -425,7 +425,7 @@ private[spark] class StandaloneSchedulerBackend(
     // logInfo(s"AMAN: Function call in doRequestTotalExecutors_lambda -> requestedTotal = $requestedTotal")
     // val newExecutorsNeeded = requestedTotal - numLambdaCallsPending.get()
     val maxExecutors = conf.get(DYN_ALLOCATION_MAX_EXECUTORS)
-    val newExecutorsNeeded = math.min((maxExecutors - numLambdaCallsPending.get()), requestedTotal)
+    val newExecutorsNeeded = math.min((maxExecutors - currentTotalExecutors), requestedTotal)
     logDebug(s"AMAN: 9001: doRequestTotalExecutors: newExecutorsNeeded = ${newExecutorsNeeded} " +
       s"currentTotalExecutors = ${currentTotalExecutors}, maxExecutors = ${maxExecutors}")
     if (newExecutorsNeeded <= 0) {

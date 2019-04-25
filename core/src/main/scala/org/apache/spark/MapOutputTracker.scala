@@ -142,9 +142,12 @@ private[spark] abstract class MapOutputTracker(conf: SparkConf) extends Logging 
       : Seq[(BlockManagerId, Seq[(BlockId, Long)])] = {
     logDebug(s"Fetching outputs for shuffle $shuffleId, partitions $startPartition-$endPartition")
     val statuses = getStatuses(shuffleId)
+    // logInfo(s"AMAN: Statuses => $statuses")
     // Synchronize on the returned array because, on the driver, it gets mutated in place
     statuses.synchronized {
-      return MapOutputTracker.convertMapStatuses(shuffleId, startPartition, endPartition, statuses)
+      val convertedStatuses = MapOutputTracker.convertMapStatuses(shuffleId, startPartition, endPartition, statuses)
+      // logInfo(s"AMAN: Converted status with possible sizes => $convertedStatuses")
+      return convertedStatuses
     }
   }
 
