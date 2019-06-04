@@ -101,9 +101,9 @@ def lambda_handler(event, context):
     
     call(['rm', download_path])
     
-    s3_client.download_file("rf-data-bucket", "sample_data_2.txt", "/tmp/lambda/sample_data.txt")
-    s3_client.download_file("rf-data-bucket", "followers.txt", "/tmp/lambda/followers.txt")
-    s3_client.download_file("rf-data-bucket", "users.txt", "/tmp/lambda/users.txt")
+#     s3_client.download_file("rf-data-bucket", "sample_data_2.txt", "/tmp/lambda/sample_data.txt")
+#     s3_client.download_file("rf-data-bucket", "followers.txt", "/tmp/lambda/followers.txt")
+#     s3_client.download_file("rf-data-bucket", "users.txt", "/tmp/lambda/users.txt")
     
     list_all_files()
     call(['df', '-h'])
