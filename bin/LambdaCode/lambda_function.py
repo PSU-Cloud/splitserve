@@ -72,6 +72,7 @@ def lambda_handler(event, context):
     key = 'jars.zip'
     call(['rm', '-rf', '/tmp/*'])
     call(['mkdir', '-p', '/tmp/lambda/spark'])
+    call(['mkdir', '/tmp/tpcds-kit/'])
  
     download_path = '/tmp/lambda/spark/jars.zip'
  
@@ -105,30 +106,28 @@ def lambda_handler(event, context):
 #     s3_client.download_file("rf-data-bucket", "followers.txt", "/tmp/lambda/followers.txt")
 #     s3_client.download_file("rf-data-bucket", "users.txt", "/tmp/lambda/users.txt")
 
-''' Library support for running TPCDS Queries'''
-#     key = 'tpckit.zip'
-#     download_path = '/tmp/tpckit.zip'
+    key = 'tpckit.zip'
+    download_path = '/tmp/tpckit.zip'
 
-#     print('START: Downloading spark tarball')
-#     print("Bucket - %s Key - %s" %(bucket, key))
-#     s3_client.download_file(bucket, key, download_path)
+    print('START: Downloading spark tarball')
+    print("Bucket - %s Key - %s" %(bucket, key))
+    s3_client.download_file(bucket, key, download_path)
     
-#     print('Extracting spark tarball')
-#     zip_ref = zipfile.ZipFile(download_path, 'r')
-#     zip_ref.extractall('/tmp/tpcds-kit/')
-#     zip_ref.close()
+    print('Extracting spark tarball')
+    zip_ref = zipfile.ZipFile(download_path, 'r')
+    zip_ref.extractall('/tmp/tpcds-kit/')
+    zip_ref.close()
     
-#     call(['rm', download_path])
-#     call(['chmod', 'u+x', '/tmp/tpcds-kit/tools/dsdgen'])
-    
+    call(['rm', download_path])
+    call(['chmod', 'u+x', '/tmp/tpcds-kit/tools/dsdgen'])
     list_all_files()
     call(['df', '-h'])
     call(['rm', '-rf', '/tmp/lambda/spark/python/test_support/'])
-    # call(['rm', '-rf', '/tmp/lambda/spark/R/'])
+    call(['rm', '-rf', '/tmp/lambda/spark/R/'])
     # call(['rm', '-rf', '/tmp/lambda/spark/R/'])
     print('/tmp/lambda structure :')
     call(['ls', '/tmp/lambda'])
-    print ('/tmp/lambda/spark structure : ')
+    print ('/tmp/lambda/spark structure : '
     call(['ls', '/tmp/lambda/spark/'])
     
     call(['df', '-h'])
@@ -143,5 +142,3 @@ def lambda_handler(event, context):
     return {
         'output' : 'Handler done'
     }
-
-
