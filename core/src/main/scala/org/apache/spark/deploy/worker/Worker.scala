@@ -159,7 +159,11 @@ private[deploy] class Worker(
   def memoryFree: Int = memory - memoryUsed
 
   private def createWorkDir() {
+    logInfo(s"AMAN: workDirPath = $workDirPath");
+
     workDir = Option(workDirPath).map(new File(_)).getOrElse(new File(sparkHome, "work"))
+    logInfo(s"AMAN: workDir = $workDir");
+
     try {
       // This sporadically fails - not sure why ... !workDir.exists() && !workDir.mkdirs()
       // So attempting to create and then check if directory was created or not.
@@ -445,7 +449,7 @@ private[deploy] class Worker(
           logInfo("Asked to launch executor %s/%d for %s".format(appId, execId, appDesc.name))
 
           // Create the executor's working directory
-          //logInfo(s"AMAN: Worker: WorkDir = $workDir")
+          logInfo(s"AMAN: Worker: WorkDir = $workDir")
 
 
           val executorDir = new File(workDir, appId + "/" + execId)
@@ -454,7 +458,7 @@ private[deploy] class Worker(
                  throw new IOException("Failed to create directory " + executorDir)
           }
 
-          //logInfo(s"AMAN: Worker: executorDir = $executorDir")
+          logInfo(s"AMAN: Worker: executorDir = $executorDir")
           
           // Create local dirs for the executor. These are passed to the executor via the
           // SPARK_EXECUTOR_DIRS environment variable, and deleted by the Worker when the
@@ -462,12 +466,14 @@ private[deploy] class Worker(
           val appLocalDirs = appDirectories.getOrElse(appId,
             Utils.getOrCreateLocalRootDirs(conf, "VM").map { dir =>
               logInfo(s"AMAN: createLocalRootDirs: $dir")
-              val appDir = Utils.createDirectory(dir, namePrefix = "executor")
+              val dirWithId = dir.concat("-" + execId.toString)
+              val appDir = Utils.createDirectory(dirWithId, namePrefix = "executor")
+	      logInfo(s"AMAN: Worker: new appDir = $appDir")
               Utils.chmod700(appDir)
               appDir.getAbsolutePath()
             }.toSeq)
           appDirectories(appId) = appLocalDirs
-          //logInfo(s"AMAN: Worker: appLocalDirs = $appLocalDirs")
+          logInfo(s"AMAN: Worker: appLocalDirs = $appLocalDirs")
           val manager = new ExecutorRunner(
             appId,
             execId,

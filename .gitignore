@@ -93,3 +93,6 @@ lambdaJars/
 files.zip
 spark-lambda/
 PageRank/
+TpcDS/
+prop_files/
+PiExample/

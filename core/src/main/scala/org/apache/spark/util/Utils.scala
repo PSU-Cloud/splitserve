@@ -279,9 +279,11 @@ private[spark] object Utils extends Logging {
     var attempts = 0
     val maxAttempts = MAX_DIR_CREATION_ATTEMPTS
     var dir: File = null
+    logInfo(s"AMAN: createDirectory namePrefix = $namePrefix");
     while (dir == null) {
       attempts += 1
       if (attempts > maxAttempts) {
+	logInfo(s"AMAN: about to throw exception root = $root");
         throw new IOException("Failed to create a temp directory (under " + root + ") after " +
           maxAttempts + " attempts!")
       }
@@ -289,6 +291,7 @@ private[spark] object Utils extends Logging {
         if (!namePrefix.equalsIgnoreCase("executor-driver") && namePrefix.contains("executor")) {
           dir = new File(root, namePrefix + "-" + nonNegativeHash(namePrefix).toString.reverse)
         } else {
+	  logInfo(s"AMAN: root path in else condition = $root namePrefix = $namePrefix");
           dir = new File(root, namePrefix + "-" + UUID.randomUUID.toString)
         }
 
@@ -308,6 +311,7 @@ private[spark] object Utils extends Logging {
   def createTempDir(
       root: String = System.getProperty("java.io.tmpdir"),
       namePrefix: String = "spark"): File = {
+    logInfo(s"AMAN: in createTempDir root = $root");
     val dir = createDirectory(root, namePrefix)
     ShutdownHookManager.registerShutdownDeleteDir(dir)
     dir
@@ -778,7 +782,9 @@ private[spark] object Utils extends Logging {
     val shuffleServiceEnabled = conf.getBoolean("spark.shuffle.service.enabled", false)
     if (conf.getBoolean("spark.shuffle.hdfs.enabled", false)) {
       val sparkApplicationId = conf.get("spark.app.id", "")
-      val tmpDir = System.getProperty("java.io.tmpdir").split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
+      //val tmpDir = System.getProperty("java.io.tmpdir").split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
+      val tmpDir = conf.get("spark.local.dir", System.getProperty("java.io.tmpdir")).split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
+      logInfo(s"AMAN: getConfiguredLocalDir HDFS option tmpDir = $tmpDir");
       tmpDir
     } else if (isRunningInYarnContainer(conf)) {
       // If we are in yarn mode, systems can have different disk layouts so we must set it
