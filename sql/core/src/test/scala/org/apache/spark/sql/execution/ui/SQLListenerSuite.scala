@@ -76,7 +76,8 @@ class SQLListenerSuite extends SparkFunSuite with SharedSQLContext with JsonTest
     executorId = "",
     host = "",
     taskLocality = null,
-    speculative = false
+    speculative = false,
+    executorType = "VM"
   )
 
   private def createTaskMetrics(accumulatorUpdates: Map[Long, Long]): TaskMetrics = {
