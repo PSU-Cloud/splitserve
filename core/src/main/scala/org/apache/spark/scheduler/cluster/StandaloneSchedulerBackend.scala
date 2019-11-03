@@ -143,7 +143,7 @@ private[spark] class StandaloneSchedulerBackend(
   var numExecutorsExpected = 0
   var numExecutorsRegistered = new AtomicInteger(0)
   var executorId = new AtomicInteger(1)
-  var numLambdaCallsPending = new AtomicInteger(0)
+  
   // Mapping from executorId to Thread object which is currently in the Lambda RPC call
   var pendingLambdaRequests = new HashMap[String, Thread]
   // Set of executorIds which are currently alive
@@ -328,7 +328,7 @@ private[spark] class StandaloneSchedulerBackend(
     Future {
       // TODO: Can we launch in parallel?
       // TODO: Can we track each thread separately and audit
-      // logInfo(s"AMAN: launchExecutorsOnLambda -> newExecutorsNeeded = $newExecutorsNeeded")
+      //logInfo(s"AMAN: launchExecutorsOnLambda -> newExecutorsNeeded = $newExecutorsNeeded")
       (1 to newExecutorsNeeded).foreach { x =>
         val hostname = sc.env.rpcEnv.address.host
         val port = sc.env.rpcEnv.address.port.toString
@@ -369,7 +369,7 @@ private[spark] class StandaloneSchedulerBackend(
             logDebug(s"LAMBDA: 9050: LambdaRequesterThread $executorId: $request")
             // Important code: Rate limit to avoid AWS errors
             limiter.acquire()
-            logInfo(s"LAMBDA: 9050.1: LambdaRequesterThread started $executorId")
+            logInfo(s"AMAN: Log from class: LambdaRequesterThread started $executorId")
             numLambdaCallsPending.addAndGet(1)
 
             val invokeRequest = new InvokeRequest
@@ -389,7 +389,6 @@ private[spark] class StandaloneSchedulerBackend(
             } finally {
               // logInfo(s"LAMBDA: 9052: Returned from lambda $executorId: finally block")
               val tmp = numLambdaCallsPending.get()
-              numLambdaCallsPending.addAndGet(-1)
               // logInfo(s"\n\nAMAN: Reducing Pending calls from $tmp to ${numLambdaCallsPending.get()}\n\n")
               pendingLambdaRequests.remove(executorId)
               val responseMetadata = lambdaClient.getCachedResponseMetadata(invokeRequest)
@@ -398,11 +397,12 @@ private[spark] class StandaloneSchedulerBackend(
           }
         }
 
+	//logInfo(s"AMAN: Starting the LambdaThread")
         val lambdaRequesterThread = LambdaRequesterThread(currentExecutorId.toString, request)
         pendingLambdaRequests(currentExecutorId.toString) = lambdaRequesterThread
         lambdaRequesterThread.setDaemon(true)
         lambdaRequesterThread.setName(s"Lambda Requester Thread for $currentExecutorId")
-        logDebug(s"LAMBDA: 9055: starting lambda requester thread for $currentExecutorId")
+        //logInfo(s"AMAN: 9055: starting lambda requester thread for $currentExecutorId")
         lambdaRequesterThread.start()
         logDebug(s"LAMBDA: 9056: returning from launchExecutorsOnLambda for $currentExecutorId")
       }
@@ -423,10 +423,13 @@ private[spark] class StandaloneSchedulerBackend(
     // TODO: Check again against numExecutorsExpected ??
     // We assume that all pending lambda calls are live lambdas and are fine
     // logInfo(s"AMAN: Function call in doRequestTotalExecutors_lambda -> requestedTotal = $requestedTotal")
-    // val newExecutorsNeeded = requestedTotal - numLambdaCallsPending.get()
+    val newExecutors = requestedTotal - numLambdaCallsPending.get()
     val maxExecutors = conf.get(DYN_ALLOCATION_MAX_EXECUTORS)
-    val newExecutorsNeeded = math.min((maxExecutors - currentTotalExecutors), requestedTotal)
-    logDebug(s"AMAN: 9001: doRequestTotalExecutors: newExecutorsNeeded = ${newExecutorsNeeded} " +
+    val newExecutorsNeeded = math.min((maxExecutors - currentTotalExecutors), newExecutors)
+
+    //logInfo(s"AMAN: Function call in doRequestTotalExecutors_lambda -> requestedTotal = $requestedTotal, newExecutors = $newExecutors, executorsNeeded = $newExecutorsNeeded, pendingCalls = $numLambdaCallsPending.get()")
+
+    //logInfo(s"AMAN: 9001: doRequestTotalExecutors: newExecutorsNeeded = ${newExecutorsNeeded} " +
       s"currentTotalExecutors = ${currentTotalExecutors}, maxExecutors = ${maxExecutors}")
     if (newExecutorsNeeded <= 0) {
       return Future { true }

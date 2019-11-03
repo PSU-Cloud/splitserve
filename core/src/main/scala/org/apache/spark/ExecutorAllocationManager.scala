@@ -367,7 +367,7 @@ private[spark] class ExecutorAllocationManager(
         s"is already $numExecutorsTarget (limit $maxNumExecutors), current executors = ${executorIds.size}")
       //logInfo("AMAN: Making another call to request Lambda executors")
       if (executorIds.size < maxNumExecutors) {
-         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
+         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
       }
       numExecutorsToAdd = 1
       return 0
@@ -394,7 +394,7 @@ private[spark] class ExecutorAllocationManager(
     // to the cluster manager and reset our exponential growth
     if (delta == 0) {
       if (executorIds.size < maxNumExecutorsNeeded) {
-         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
+         client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
       }
       numExecutorsToAdd = 1
       return 0
@@ -402,6 +402,7 @@ private[spark] class ExecutorAllocationManager(
     
     logInfo("AMAN: Called function addExecutor, transferring control to Lambda function")
     val addRequestAcknowledged = testing ||
+      client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA") || 
       client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
     logInfo("AMAN: Call return successfully from Lambda function")
     if (addRequestAcknowledged) {

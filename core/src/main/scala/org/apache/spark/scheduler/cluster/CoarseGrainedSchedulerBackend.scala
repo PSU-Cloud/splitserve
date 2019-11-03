@@ -71,6 +71,8 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
  // `CoarseGrainedSchedulerBackend.this`.
  private val executorDataMap = new HashMap[String, ExecutorData]
 
+ var numLambdaCallsPending = new AtomicInteger(0)
+
  // Number of executors requested by the cluster manager, [[ExecutorAllocationManager]]
   @GuardedBy("CoarseGrainedSchedulerBackend.this")
   private var requestedTotalExecutors = 0
@@ -178,6 +180,11 @@ private val listenerBus = scheduler.sc.listenerBus
      logDebug("LAMBDA: 3001: RegisterExecutor")
      val data = new ExecutorData(executorRef, executorRef.address, hostname,
        cores, cores, logUrls, System.currentTimeMillis(), executorType)
+     
+     if (executorType == "LAMBDA") {
+     	numLambdaCallsPending.addAndGet(-1)
+     }
+
      // This must be synchronized because variables mutated
      // in this block are read when requesting executors
      CoarseGrainedSchedulerBackend.this.synchronized {
@@ -586,7 +593,7 @@ private val listenerBus = scheduler.sc.listenerBus
         doRequestTotalExecutors(numExecutors)
       } else {
         val currentTotalExecutors = executorDataMap.size
-        // logInfo(s"AMAN: currentTotalExecutors = $currentTotalExecutors, requested = $numExecutors")
+        //logInfo(s"AMAN: currentTotalExecutors = $currentTotalExecutors, requested = $numExecutors")
         doRequestTotalExecutors_lambda(numExecutors, currentTotalExecutors)
       }
     }

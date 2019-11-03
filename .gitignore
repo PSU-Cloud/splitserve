@@ -90,7 +90,8 @@ spark-warehouse/
 .Rproj.user
 KMeansApp/
 lambdaJars/
-files.zip
+files.zip/
+jars/
 spark-lambda/
 PageRank/
 TpcDS/
