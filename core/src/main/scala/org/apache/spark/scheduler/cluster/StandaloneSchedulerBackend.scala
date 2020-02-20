@@ -429,8 +429,7 @@ private[spark] class StandaloneSchedulerBackend(
 
     //logInfo(s"AMAN: Function call in doRequestTotalExecutors_lambda -> requestedTotal = $requestedTotal, newExecutors = $newExecutors, executorsNeeded = $newExecutorsNeeded, pendingCalls = $numLambdaCallsPending.get()")
 
-    //logInfo(s"AMAN: 9001: doRequestTotalExecutors: newExecutorsNeeded = ${newExecutorsNeeded} " +
-      s"currentTotalExecutors = ${currentTotalExecutors}, maxExecutors = ${maxExecutors}")
+    //logInfo(s"AMAN: 9001: doRequestTotalExecutors: newExecutorsNeeded = ${newExecutorsNeeded} " + s"currentTotalExecutors = ${currentTotalExecutors}, maxExecutors = ${maxExecutors}")
     if (newExecutorsNeeded <= 0) {
       return Future { true }
     }
