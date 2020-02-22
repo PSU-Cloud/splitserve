@@ -8,9 +8,7 @@ import java.util.Arrays;
 
 public class SplitServe implements RequestHandler<RequestClass, ResponseClass>{   
     public ResponseClass handleRequest(RequestClass request, Context context){
-        String greetingString = String.format("Hello %s, %s, %s, %s, %s.", request.sparkDriverHostname, request.sparkDriverPort, request.sparkCommandLine, request.javaPartialCommandLine, request.executorPartialCommandLine);
 
-    System.out.println("This is sample output ");
 
     String spark_driver_hostname = request.getSparkDriverHostname();
     String spark_driver_port = request.getSparkDriverPort();
@@ -23,7 +21,6 @@ public class SplitServe implements RequestHandler<RequestClass, ResponseClass>{
 
     System.out.println("Hostname = " + request.sparkDriverHostname);
     System.out.println("Port = " + request.sparkDriverPort);
-    System.out.println("Java cmdline = " + request.javaPartialCommandLine);
 
     String cmdline = java_partial_cmdline + java_extra_options + executor_partial_cmdline;
     String[] cmdline_arr = cmdline.split(" ", 0);
