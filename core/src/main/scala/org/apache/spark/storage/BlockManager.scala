@@ -133,9 +133,17 @@ private[spark] class BlockManager(
   private[spark] val shuffleClient = if (externalShuffleServiceEnabled) {
     new ExternalShuffleClient(transConf, securityManager, securityManager.isAuthenticationEnabled(),
       securityManager.isSaslEncryptionEnabled())
-  } else if (shuffleOverHDFSEnabled) {
+  } else if (shuffleOverHDFSEnabled && executorType == "LAMBDA") {
     new HDFSShuffleClient(transConf, this)
   } else {
+    /* AMAN: We fall to this case even if
+     * dynamicExecutorAllocation is enabled
+     * but we are working with a VM based
+     * executor. The idea is that VM based
+     * executor will live longer than LAMBDA
+     * based executor, so we need not persist
+     * the shuffle files.
+     */
     blockTransferService
   }
 
