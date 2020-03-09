@@ -82,6 +82,7 @@ private[spark] class BlockManager(
     BlockManager.shuffleOverHDFSEnabled(conf)
 
   var executorKind: String = executorType
+  logInfo(s"AMAN: BlockManager executorKind = ${executorKind}")
 
   val diskBlockManager = {
     // Only perform cleanup if an external service is not serving our shuffle files.
