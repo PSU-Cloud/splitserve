@@ -81,6 +81,8 @@ private[spark] class BlockManager(
   private[spark] val shuffleOverHDFSEnabled =
     BlockManager.shuffleOverHDFSEnabled(conf)
 
+  var executorKind: String = executorType
+
   val diskBlockManager = {
     // Only perform cleanup if an external service is not serving our shuffle files.
     val deleteFilesOnStop =

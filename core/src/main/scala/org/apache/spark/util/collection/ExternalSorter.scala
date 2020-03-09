@@ -686,7 +686,9 @@ private[spark] class ExternalSorter[K, V, C](
 
     // Track location of each range in the output file
     val lengths = new Array[Long](numPartitions)
-    val writer = if (blockManager.shuffleOverHDFSEnabled) {
+    //logInfo(s"AMAN: writePartitionedFile executorKind = ${blockManager.executorKind}")
+
+    val writer = if (blockManager.shuffleOverHDFSEnabled /*&& blockManager.executorKind == "LAMBDA"*/) {
       blockManager.getHDFSBlockWriter(blockId, outputFile, serInstance, fileBufferSize,
         context.taskMetrics().shuffleWriteMetrics)
     } else {

@@ -779,12 +779,13 @@ private[spark] object Utils extends Logging {
    * logic of locating the local directories according to deployment mode.
    */
   def getConfiguredLocalDirs(conf: SparkConf, executorType: String): Array[String] = {
+    logInfo(s"AMAN: in getConfiguredLocalDirs, executorType = ${executorType}")
     val shuffleServiceEnabled = conf.getBoolean("spark.shuffle.service.enabled", false)
-    if (conf.getBoolean("spark.shuffle.hdfs.enabled", false)) {
+    if (conf.getBoolean("spark.shuffle.hdfs.enabled", false) && executorType == "LAMBDA") {
       val sparkApplicationId = conf.get("spark.app.id", "")
       //val tmpDir = System.getProperty("java.io.tmpdir").split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
       val tmpDir = conf.get("spark.local.dir", System.getProperty("java.io.tmpdir")).split(",").map(tmp => tmp.concat(s"/${sparkApplicationId}"))
-      logInfo(s"AMAN: getConfiguredLocalDir HDFS option tmpDir = $tmpDir");
+      logInfo(s"AMAN: getConfiguredLocalDir HDFS option executorType = $executorType");
       tmpDir
     } else if (isRunningInYarnContainer(conf)) {
       // If we are in yarn mode, systems can have different disk layouts so we must set it

@@ -86,15 +86,17 @@ private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, delet
           throw new IOException(s"Failed to create local dir in $newDir.")
         }
 
+	logInfo(s"AMAN: subDir: executorType = ${executorType}")
+
 	if (executorType == "LAMBDA") {
             val path = Utils.localFileToHDFS(shuffleHDFSNode, newDir)
-            logInfo(s"Creating a dir ${path}")
+	    logInfo(s"Creating a dir ${path}")
             logInfo(s"Creating a dir ${path.getName}")
-            if(shuffleOverHDFS && !hadoopMkdir(path)) {
+ 	    if(shuffleOverHDFS && !hadoopMkdir(path)) {
               throw new IOException(s"Failed to create dir in $path.")
             }
         }
-
+            
         subDirs(dirId)(subDirId) = newDir
         newDir
       }
@@ -157,6 +159,7 @@ private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, delet
    * be deleted on JVM exit when using the external shuffle service.
    */
   private def createLocalDirs(conf: SparkConf, executorType: String): Array[File] = {
+    logInfo(s"AMAN: createLocalDir executorType = ${executorType}")
     Utils.getConfiguredLocalDirs(conf, executorType).flatMap { rootDir =>
       try {
           val localDir = Utils.createDirectory(rootDir, s"executor-${executorId}")
