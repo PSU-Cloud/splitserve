@@ -40,7 +40,7 @@ private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, delet
 
   // TODO: BHARATH: I think we should think of eliminating this as a flag (if possible)
   // and instead create derived class which encapsulate the behaviour with that being true.
-  private val shuffleOverHDFS = BlockManager.shuffleOverHDFSEnabled(conf)
+  private val shuffleOverHDFS = BlockManager.shuffleOverHDFSEnabled(conf, executorType)
 
   private val shuffleHDFSNode = BlockManager.getHDFSNode(conf)
 

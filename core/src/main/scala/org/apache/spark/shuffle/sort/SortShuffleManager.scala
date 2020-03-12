@@ -80,7 +80,7 @@ private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager 
    */
   private[this] val numMapsForShuffle = new ConcurrentHashMap[Int, Int]()
 
-  val shuffleOverHDFS = BlockManager.shuffleOverHDFSEnabled(conf)
+  val shuffleOverHDFS = BlockManager.shuffleOverHDFSEnabled(conf, SparkEnv.get.blockManager._executorType)
 
   override val shuffleBlockResolver = if (shuffleOverHDFS) {
     new HDFSShuffleBlockResolver(conf)

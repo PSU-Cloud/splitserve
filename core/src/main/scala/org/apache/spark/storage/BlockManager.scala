@@ -79,10 +79,10 @@ private[spark] class BlockManager(
     conf.getBoolean("spark.shuffle.service.enabled", false)
 
   private[spark] val shuffleOverHDFSEnabled =
-    BlockManager.shuffleOverHDFSEnabled(conf)
+    BlockManager.shuffleOverHDFSEnabled(conf, executorType)
 
-  var executorKind: String = executorType
-  logInfo(s"AMAN: BlockManager executorKind = ${executorKind}")
+  var _executorType: String = executorType
+  logInfo(s"AMAN: BlockManager executorType = ${_executorType}")
 
   val diskBlockManager = {
     // Only perform cleanup if an external service is not serving our shuffle files.
@@ -1449,7 +1449,9 @@ private[spark] object BlockManager {
     blockManagers.toMap
   }
 
-  def shuffleOverHDFSEnabled(conf: SparkConf): Boolean = conf.getBoolean("spark.shuffle.hdfs.enabled", false)
+  def shuffleOverHDFSEnabled(conf: SparkConf, executorType: String): Boolean = {
+    conf.getBoolean("spark.shuffle.hdfs.enabled", false) && (executorType == "LAMBDA")
+  }
 
   def getHDFSNode(conf: SparkConf): String = {
     conf.get("spark.shuffle.hdfs.node")
