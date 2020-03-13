@@ -139,6 +139,7 @@ object SparkEnv extends Logging {
 
   private[spark] val driverSystemName = "sparkDriver"
   private[spark] val executorSystemName = "sparkExecutor"
+  var _executorType: String = ""
 
   def set(e: SparkEnv) {
     env = e
@@ -232,6 +233,8 @@ object SparkEnv extends Logging {
 
     val isDriver = executorId == SparkContext.DRIVER_IDENTIFIER
 
+    _executorType = executorType
+
     // Listener bus is only used on the driver
     if (isDriver) {
       assert(listenerBus != null, "Attempted to create driver SparkEnv with null listener bus!")
@@ -271,12 +274,19 @@ object SparkEnv extends Logging {
       } catch {
         case _: NoSuchMethodException =>
           try {
-            cls.getConstructor(classOf[SparkConf]).newInstance(conf).asInstanceOf[T]
+              cls.getConstructor(classOf[SparkConf], classOf[java.lang.String])
+	         .newInstance(conf, executorType)
+                 .asInstanceOf[T]
           } catch {
-            case _: NoSuchMethodException =>
-              cls.getConstructor().newInstance().asInstanceOf[T]
-          }
-      }
+             case _: NoSuchMethodException =>
+               try {
+                  cls.getConstructor(classOf[SparkConf]).newInstance(conf).asInstanceOf[T]
+               } catch {
+                 case _: NoSuchMethodException =>
+                     cls.getConstructor().newInstance().asInstanceOf[T]
+               }
+          }   
+       }
     }
 
     // Create an instance of the class named by the given SparkConf property, or defaultClassName

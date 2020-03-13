@@ -49,7 +49,7 @@ class BlockManagerReplicationSuite extends SparkFunSuite
   private val securityMgr = new SecurityManager(conf)
   private val bcastManager = new BroadcastManager(true, conf, securityMgr)
   private val mapOutputTracker = new MapOutputTrackerMaster(conf, bcastManager, true)
-  private val shuffleManager = new SortShuffleManager(conf)
+  private val shuffleManager = new SortShuffleManager(conf, "VM")
 
   // List of block manager created during an unit test, so that all of the them can be stopped
   // after the unit test.

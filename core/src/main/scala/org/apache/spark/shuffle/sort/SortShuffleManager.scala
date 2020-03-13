@@ -67,7 +67,7 @@ import org.apache.spark.storage.BlockManager
  *
  * For more details on these optimizations, see SPARK-7081.
  */
-private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
+private[spark] class SortShuffleManager(conf: SparkConf, executorType: String) extends ShuffleManager with Logging {
 
   if (!conf.getBoolean("spark.shuffle.spill", true)) {
     logWarning(
@@ -80,7 +80,9 @@ private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager 
    */
   private[this] val numMapsForShuffle = new ConcurrentHashMap[Int, Int]()
 
-  val shuffleOverHDFS = BlockManager.shuffleOverHDFSEnabled(conf, SparkEnv.get.blockManager._executorType)
+  logInfo(s"AMAN: SortShuffleManager executorType = ${executorType}")
+
+  val shuffleOverHDFS = BlockManager.shuffleOverHDFSEnabled(conf, executorType)
 
   override val shuffleBlockResolver = if (shuffleOverHDFS) {
     new HDFSShuffleBlockResolver(conf)
