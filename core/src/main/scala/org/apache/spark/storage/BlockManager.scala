@@ -136,7 +136,7 @@ private[spark] class BlockManager(
   private[spark] val shuffleClient = if (externalShuffleServiceEnabled) {
     new ExternalShuffleClient(transConf, securityManager, securityManager.isAuthenticationEnabled(),
       securityManager.isSaslEncryptionEnabled())
-  } else if (shuffleOverHDFSEnabled && executorType == "LAMBDA") {
+  } else if (shuffleOverHDFSEnabled) {
     new HDFSShuffleClient(transConf, this)
   } else {
     /* AMAN: We fall to this case even if
@@ -1450,7 +1450,12 @@ private[spark] object BlockManager {
   }
 
   def shuffleOverHDFSEnabled(conf: SparkConf, executorType: String): Boolean = {
-    conf.getBoolean("spark.shuffle.hdfs.enabled", false) && (executorType == "LAMBDA")
+    /* AMAN: If there is a VM based executor, it sets
+     * the executorType="VM" but for a Lambda based
+     * executor this field might be null.
+     */
+    conf.getBoolean("spark.shuffle.hdfs.enabled", false) &&
+			((executorType == "LAMBDA") || (executorType == null))
   }
 
   def getHDFSNode(conf: SparkConf): String = {
