@@ -30,7 +30,7 @@ public class SplitServe implements RequestHandler<RequestClass, ResponseClass>{
                 )
                 .toArray(size -> new String[size]);
    
-    System.out.println("START: SplitServe executor: " + cmdToCall.toString());
+    System.out.println("START: SplitServe executor: " + Arrays.toString(cmdToCall));
 	
     try {
     	Process executor = new ProcessBuilder().command(cmdToCall).inheritIO().start();
