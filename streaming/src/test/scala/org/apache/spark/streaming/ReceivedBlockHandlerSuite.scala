@@ -62,7 +62,7 @@ class ReceivedBlockHandlerSuite
   val securityMgr = new SecurityManager(conf)
   val broadcastManager = new BroadcastManager(true, conf, securityMgr)
   val mapOutputTracker = new MapOutputTrackerMaster(conf, broadcastManager, true)
-  val shuffleManager = new SortShuffleManager(conf)
+  val shuffleManager = new SortShuffleManager(conf, "VM")
   val serializer = new KryoSerializer(conf)
   var serializerManager = new SerializerManager(serializer, conf)
   val manualClock = new ManualClock

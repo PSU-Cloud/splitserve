@@ -83,8 +83,8 @@ class Request {
 }
 
 case class LambdaRequestPayload (
-  /*sparkS3Bucket: String,
-  sparkS3Key: String,*/
+  sparkS3Bucket: String,
+  sparkS3Key: String,
   sparkDriverHostname: String,
   sparkDriverPort: String,
   sparkCommandLine: String,
@@ -161,7 +161,7 @@ private[spark] class StandaloneSchedulerBackend(
   clientConfig.setSocketTimeout(720000)
 
   // AMAN: path set to /opt since using Lambda layers
-  val defaultClasspath = s"/opt/jars/*,/opt/spark/conf/*"
+  val defaultClasspath = s"/tmp/lambda/spark/jars/*,/tmp/lambda/spark/conf/*" //s"/opt/jars/*,/opt/spark/conf/*"
   val lambdaClasspathStr = sc.conf.get("spark.lambda.classpath", defaultClasspath)
   val lambdaClasspath = lambdaClasspathStr.split(",").map(_.trim).mkString(":")
 
@@ -352,14 +352,14 @@ private[spark] class StandaloneSchedulerBackend(
             "--hostname LAMBDA " +
             "--cores 1 " +
             s"--app-id ${applicationId()} " +
-            s"--user-class-path file:/opt/* " + 
+            s"--user-class-path file:/tmp/lambda/* " + 
             s"--executor-type LAMBDA"
 
         val commandLine = javaPartialCommandLine + executorPartialCommandLine
 
         val request = new LambdaRequestPayload(
-          /*sparkS3Bucket = lambdaBucket.get.split("/").last,
-          sparkS3Key = s"lambda/spark-lambda-${s3SparkVersion}.zip",*/
+          sparkS3Bucket = lambdaBucket.get.split("/").last,
+          sparkS3Key = s"lambda/spark-lambda-${s3SparkVersion}.zip",
           sparkDriverHostname = hostname,
           sparkDriverPort = port,
           sparkCommandLine = commandLine,
