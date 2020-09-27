@@ -8,7 +8,7 @@ To use SplitServe with AWS Lambdas, you will need to setup Lambdas
 to work with your AWS cluster.
 [Instructions to setup AWS Lambdas](https://docs.google.com/document/d/1ZheYDby7ZeJ69THJVyR3gNsFNLVbb3whUfaG8mYS-iE/edit?usp=sharing)
 
-Lambda function code can be found under `bin/lamdafunction.py`
+Lambda function code can be found under `bin/LambdaCode/lamda_function.py`
 
 You will also need to setup HDFS to allow SplitServe executors
 to read and their their intermediate shuffle data to and from a
