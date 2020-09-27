@@ -115,11 +115,11 @@ command line argument.
 
 3. Start SplitServer master:
 ```
-SPLITSERVE\_HOME/sbin/start-master.sh
+SPLITSERVE-HOME/sbin/start-master.sh
 ```
 
 4. Run the following example to calculate value of Pi with 4
 cores:
 ```
-SPLITSERVE\_HOME/bin/spark-submit --class org.apache.spark.examples.SparkPi --master <SPLITSERVE\_MASTER\_IP> SPLITSERVE\_HOME/examples/target/original-spark-examples\_2.11-2.1.0.jar 4
+SPLITSERVE-HOME/bin/spark-submit --class org.apache.spark.examples.SparkPi --master <SPLITSERVE-MASTER-IP> SPLITSERVE-HOME/examples/target/original-spark-examples_2.11-2.1.0.jar 4
 ```
