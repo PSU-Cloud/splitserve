@@ -23,7 +23,7 @@ To build SplitServe, use the following:
 After building SplitServe, zip the libraries to run SplitServe
 executor binary and upload them to your S3 bucket. When SplitServe
 is run for the first time while using Lambda executors, it will
-download the executory (and any other required libraries) from this
+download the executors (and any other required libraries) from this
 bucekt.
 
 ## Adding configurations
