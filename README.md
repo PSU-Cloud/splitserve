@@ -41,9 +41,11 @@ In order to use AWS Lambdas as executors the following configurations
 are needed to let SplitServe know how to use Lambdas:
 
 This configuration is needed to use Lambdas alongside VMs as executors.
-Since Lambdas have various resource limitations on them, SplitServe
-will release Lambdas not being used and/or if they are nearing their
-resource caps.
+If the the scheduler finds pending tasks but no available executors
+in the cluster, SplitServe will autoscale using either VMs or Lambdas.
+On the other hand, since Lambdas have various resource limitations on
+them, SplitServe will release Lambdas not being used and/or if they are
+nearing their resource caps.
 
 ```
 spark.dynamicAllocation.enabled=true
@@ -51,7 +53,7 @@ spark.dynamicAllocation.enabled=true
 
 Number of executors a cluster can work with to run a workload.
 Note, this number represents the sum of all executors in the cluster
-(i.e. VM executors and Lambda executors).
+(i.e. VM and Lambda executors).
 
 ```
 spark.dynamicAllocation.minExecutors=1
