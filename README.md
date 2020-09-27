@@ -6,7 +6,7 @@ SplitServe is built upon Apache Spark.
 
 To use SplitServe with AWS Lambdas, you will need to setup Lambdas
 to work with your AWS cluster.
-[Instructions to setup AWS Lambdas] (https://docs.google.com/document/d/1ZheYDby7ZeJ69THJVyR3gNsFNLVbb3whUfaG8mYS-iE/edit?usp=sharing)
+[Instructions to setup AWS Lambdas](https://docs.google.com/document/d/1ZheYDby7ZeJ69THJVyR3gNsFNLVbb3whUfaG8mYS-iE/edit?usp=sharing)
 
 Lambda function code can be found under `bin/lamdafunction.py`
 
@@ -29,7 +29,7 @@ bucekt.
 ## Adding configurations
 SplitServe supports almost all basic Spark configurations.
 A list of these configurations with descriptions can be
-found [here] (https://spark.apache.org/docs/2.1.0/configuration.html)
+found [here](https://spark.apache.org/docs/2.1.0/configuration.html)
 
 These configruations must be added to `spark.conf` in the conf
 directory.
