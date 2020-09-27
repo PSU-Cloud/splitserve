@@ -31,8 +31,8 @@ SplitServe supports almost all basic Spark configurations.
 A list of these configurations with descriptions can be
 found [here](https://spark.apache.org/docs/2.1.0/configuration.html)
 
-These configruations must be added to `spark.conf` in the conf
-directory.
+These configruations must be added to `spark-defaults.conf` in the conf
+directory or given as command line arguments.
 
 SplitServe supports various other configurable knobs to control
 the cluster configuration to suit the workload being run.
@@ -102,3 +102,24 @@ spark.eventLog.dir <path_to_log_directory>
 spark.history.fs.logDirectory <path_to_history_directory>
 ```
 
+## Example:
+After building SplitServe, setup your AWS Lambda function to be used as executors by SplitServe.
+(Note that this is optional. You can run SplitServe with only VMs in the cluster to be used
+as executors as well).
+
+1. Start HDFS on the cluster and give the primary node's address and port
+as a configuration either through `spark-defaults.conf` or as a
+command line argument.
+
+2. Load the binaries in your S3 bucket (if using Lambdas).
+
+3. Start SplitServer master:
+```
+SPLITSERVE\_HOME/sbin/start-master.sh
+```
+
+4. Run the following example to calculate value of Pi with 4
+cores:
+```
+SPLITSERVE\_HOME/bin/spark-submit --class org.apache.spark.examples.SparkPi --master <SPLITSERVE\_MASTER\_IP> SPLITSERVE\_HOME/examples/target/original-spark-examples\_2.11-2.1.0.jar 4
+```
