@@ -1,7 +1,7 @@
 # SplitServe
 
-SplitServe is a framework to efficiently run stateful workloads on
-both IaaS and FaaS. 
+SplitServe is a framework designed to efficiently run stateful workloads on
+FaaS and IaaS. 
 SplitServe is built upon Apache Spark.
 
 To use SplitServe with AWS Lambdas, you will need to setup Lambdas
