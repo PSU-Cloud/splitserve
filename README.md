@@ -15,14 +15,16 @@ to read and their their intermediate shuffle data to and from a
 common layer. We recommend using HDFS-2.7.7
 
 ## Building SplitServe
+SplitServe requires JAVA version 8 to be installed on the system.
 To build SplitServe, use the following:
 ```
 ./build/mvn -DskipTests clean package
 ```
 
 After building SplitServe, zip the libraries to run SplitServe
-executor binary and upload them to your S3 bucket. When SplitServe
-is run for the first time while using Lambda executors, it will
+executor binary and upload them to your S3 bucket. These libraries
+can be found under `SPLITSERV_HOME/assembly/target/scala-2.11/jars/`.
+When SplitServe is run for the first time while using Lambda executors, it will
 download the executors (and any other required libraries) from this
 bucket.
 
