@@ -1,14 +1,14 @@
 # SplitServe
 
-SplitServe is a framework to efficiently run stateful workloads on
-both IaaS and FaaS. 
+SplitServe is a framework designed to efficiently run stateful workloads on
+FaaS and IaaS. 
 SplitServe is built upon Apache Spark.
 
 To use SplitServe with AWS Lambdas, you will need to setup Lambdas
 to work with your AWS cluster.
 [Instructions to setup AWS Lambdas](https://docs.google.com/document/d/1ZheYDby7ZeJ69THJVyR3gNsFNLVbb3whUfaG8mYS-iE/edit?usp=sharing)
 
-Lambda function code can be found under `bin/lamdafunction.py`
+Lambda function code can be found under `bin/LambdaCode/lamda_function.py`
 
 You will also need to setup HDFS to allow SplitServe executors
 to read and their their intermediate shuffle data to and from a
@@ -23,7 +23,7 @@ To build SplitServe, use the following:
 After building SplitServe, zip the libraries to run SplitServe
 executor binary and upload them to your S3 bucket. When SplitServe
 is run for the first time while using Lambda executors, it will
-download the executory (and any other required libraries) from this
+download the executors (and any other required libraries) from this
 bucekt.
 
 ## Adding configurations
@@ -41,9 +41,11 @@ In order to use AWS Lambdas as executors the following configurations
 are needed to let SplitServe know how to use Lambdas:
 
 This configuration is needed to use Lambdas alongside VMs as executors.
-Since Lambdas have various resource limitations on them, SplitServe
-will release Lambdas not being used and/or if they are nearing their
-resource caps.
+If the the scheduler finds pending tasks but no available executors
+in the cluster, SplitServe will autoscale using either VMs or Lambdas.
+On the other hand, since Lambdas have various resource limitations on
+them, SplitServe will release Lambdas not being used and/or if they are
+nearing their resource caps.
 
 ```
 spark.dynamicAllocation.enabled=true
@@ -51,7 +53,7 @@ spark.dynamicAllocation.enabled=true
 
 Number of executors a cluster can work with to run a workload.
 Note, this number represents the sum of all executors in the cluster
-(i.e. VM executors and Lambda executors).
+(i.e. VM and Lambda executors).
 
 ```
 spark.dynamicAllocation.minExecutors=1
