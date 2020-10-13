@@ -24,14 +24,14 @@ After building SplitServe, zip the libraries to run SplitServe
 executor binary and upload them to your S3 bucket. When SplitServe
 is run for the first time while using Lambda executors, it will
 download the executors (and any other required libraries) from this
-bucekt.
+bucket.
 
 ## Adding configurations
 SplitServe supports almost all basic Spark configurations.
 A list of these configurations with descriptions can be
 found [here](https://spark.apache.org/docs/2.1.0/configuration.html)
 
-These configruations must be added to `spark-defaults.conf` in the conf
+These configurations must be added to `spark-defaults.conf` in the conf
 directory or given as command line arguments.
 
 SplitServe supports various other configurable knobs to control
@@ -41,7 +41,7 @@ In order to use AWS Lambdas as executors the following configurations
 are needed to let SplitServe know how to use Lambdas:
 
 This configuration is needed to use Lambdas alongside VMs as executors.
-If the the scheduler finds pending tasks but no available executors
+If the scheduler finds pending tasks but no available executors
 in the cluster, SplitServe will autoscale using either VMs or Lambdas.
 On the other hand, since Lambdas have various resource limitations on
 them, SplitServe will release Lambdas not being used and/or if they are
