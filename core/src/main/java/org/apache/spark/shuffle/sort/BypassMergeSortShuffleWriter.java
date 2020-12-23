@@ -138,9 +138,11 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     this.shuffleBlockResolver = shuffleBlockResolver;
     this.conf = conf;
     this.shuffleOverHDFS = blockManager.shuffleOverHDFSEnabled();
-    this.shuffleHDFSNode = BlockManager.getHDFSNode(conf);
-    this.hadoopConf = BlockManager.getHadoopConf(conf);
-    this.hadoopFileSystem = BlockManager.getHadoopFileSystem(conf);
+    if (this.shuffleOverHDFS) {
+    	this.shuffleHDFSNode = BlockManager.getHDFSNode(conf);
+    	this.hadoopConf = BlockManager.getHadoopConf(conf);
+    	this.hadoopFileSystem = BlockManager.getHadoopFileSystem(conf);
+    }
   }
 
   @Override
