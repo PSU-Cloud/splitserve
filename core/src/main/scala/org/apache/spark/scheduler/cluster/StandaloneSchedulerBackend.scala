@@ -140,10 +140,10 @@ private[spark] class StandaloneSchedulerBackend(
 
   val lambdaBucket = Option(sc.getConf.get("spark.lambda.s3.bucket", ""))
 
-  if (!lambdaBucket.isDefined) {
+  /*if (!lambdaBucket.isDefined) {
     throw new Exception(s"spark.lambda.s3.bucket should" +	
       s" have a valid S3 bucket name (eg: s3://lambda) having Spark binaries")	
-  }
+  }*/
 
   val lambdaFunctionName = sc.conf.get("spark.lambda.function.name", "spark-lambda")
   val s3SparkVersion = sc.conf.get("spark.lambda.spark.software.version", "LATEST")
@@ -365,7 +365,7 @@ private[spark] class StandaloneSchedulerBackend(
         val commandLine = javaPartialCommandLine + executorPartialCommandLine
 
         val request = new LambdaRequestPayload(
-          sparkS3Bucket = lambdaBucket.get.split("/").last,
+          sparkS3Bucket = if (!lambdaBucket.isEmpty) lambdaBucket.get.split("/").last else "",
           sparkS3Key = s"lambda/spark-lambda-${s3SparkVersion}.zip",
           sparkDriverHostname = hostname,
           sparkDriverPort = port,
