@@ -138,7 +138,7 @@ private[spark] class StandaloneSchedulerBackend(
   //AMAN: Lambda support
 
 
-  val lambdaBucket = Option(sc.getConf.get("spark.lambda.s3.bucket"))
+  val lambdaBucket = Option(sc.getConf.get("spark.lambda.s3.bucket", ""))
 
   if (!lambdaBucket.isDefined) {
     throw new Exception(s"spark.lambda.s3.bucket should" +	
