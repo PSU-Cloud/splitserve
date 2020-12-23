@@ -89,7 +89,7 @@ private[spark] class DiskBlockManager(executorId: String, conf: SparkConf, delet
           throw new IOException(s"Failed to create local dir in $newDir.")
         }
 
-	if (executorType == "LAMBDA") {
+	if (executorType == "LAMBDA" && !shuffleHDFSNode.isEmpty) {
             val path = Utils.localFileToHDFS(shuffleHDFSNode, newDir)
             logInfo(s"Creating a dir ${path}")
             logInfo(s"Creating a dir ${path.getName}")

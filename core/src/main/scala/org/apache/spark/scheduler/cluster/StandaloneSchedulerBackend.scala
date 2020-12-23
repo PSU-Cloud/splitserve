@@ -166,7 +166,7 @@ private[spark] class StandaloneSchedulerBackend(
   clientConfig.setSocketTimeout(720000)
 
   // AMAN: path set to /opt since using Lambda layers
-  val defaultClasspath = s"/tmp/lambda/spark/jars/*,/tmp/lambda/spark/conf/*"
+  val defaultClasspath = s"/mnt/shuffleDir/SplitServe/jars/*,/mnt/shuffleDir/SplitServe/conf/*"
   val lambdaClasspathStr = sc.conf.get("spark.lambda.classpath", defaultClasspath)
   val lambdaClasspath = lambdaClasspathStr.split(",").map(_.trim).mkString(":")
 
@@ -344,12 +344,14 @@ private[spark] class StandaloneSchedulerBackend(
         // logInfo(s"AMAN: currentExecutorId requested -> $currentExecutorId")
         val containerId = applicationId() + "_%08d".format(currentExecutorId)
 
+	val externalShuffle = Option(sc.getConf.get("spark.shuffle.service.enabled", "false"))
+
         val javaPartialCommandLine = s"java -cp ${lambdaClasspath} " +
             s"-server -Xmx${lambdaContainerMemory}m " +
             "-Djava.net.preferIPv4Stack=true " +
             s"-Dspark.driver.port=${port} " +
             "-Dspark.dynamicAllocation.enabled=true " +
-            "-Dspark.shuffle.service.enabled=false "
+            "-Dspark.shuffle.service.enabled=" + externalShuffle
 
         val executorPartialCommandLine = "org.apache.spark.executor.CoarseGrainedExecutorBackend " +
             s"--driver-url spark://CoarseGrainedScheduler@${hostname}:${port} " +
@@ -357,7 +359,7 @@ private[spark] class StandaloneSchedulerBackend(
             "--hostname LAMBDA " +
             "--cores 1 " +
             s"--app-id ${applicationId()} " +
-            s"--user-class-path file:/tmp/lambda/* " + 
+            s"--user-class-path file:/mnt/shuffleDir/* " + 
             s"--executor-type LAMBDA"
 
         val commandLine = javaPartialCommandLine + executorPartialCommandLine

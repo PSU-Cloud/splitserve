@@ -317,14 +317,14 @@ private[spark] class ExecutorAllocationManager(
     val maxNeeded = maxNumExecutorsNeeded
     //AMAN_ATA: Checking the call flow
 
-    //logInfo("AMAN: Called UpdateAndSync from ExecutionAllocationManager")
+    // logInfo(s"AMAN: Called UpdateAndSync from ExecutionAllocationManager, maxNeeded=$maxNeeded target=$numExecutorsTarget")
 
     if (initializing) {
       // Do not change our target while we are still initializing,
       // Otherwise the first job may have to ramp up unnecessarily
       0
     } else if (maxNeeded < numExecutorsTarget) {
-      //logInfo("AMAN: UpdateAndSync called the FIRST If condition")
+      // logInfo("AMAN: UpdateAndSync called the FIRST If condition")
       // The target number exceeds the number we actually need, so stop adding new
       // executors and inform the cluster manager to cancel the extra pending requests
       val oldNumExecutorsTarget = numExecutorsTarget
@@ -340,7 +340,7 @@ private[spark] class ExecutorAllocationManager(
       }
       numExecutorsTarget - oldNumExecutorsTarget
     } else if (addTime != NOT_SET && now >= addTime) {
-      //logInfo(s"AMAN: UpdateAndSync called within ELSE IF, maxNeeded = $maxNeeded")
+      // logInfo(s"AMAN: UpdateAndSync called within ELSE IF, maxNeeded = $maxNeeded")
       val delta = addExecutors(maxNeeded)
       logDebug(s"Starting timer to add more executors (to " +
         s"expire in $sustainedSchedulerBacklogTimeoutS seconds)")
@@ -362,6 +362,7 @@ private[spark] class ExecutorAllocationManager(
    */
   private def addExecutors(maxNumExecutorsNeeded: Int): Int = {
     // Do not request more executors if it would put our target over the upper bound
+    // logInfo(s"AMAN: in addExecutors maxNumExecutorsNeeded=$maxNumExecutorsNeeded")
     if (numExecutorsTarget >= maxNumExecutors) {
       logDebug(s"AMAN: Not adding executors because our current target total " +
         s"is already $numExecutorsTarget (limit $maxNumExecutors), current executors = ${executorIds.size}")
@@ -394,6 +395,7 @@ private[spark] class ExecutorAllocationManager(
     // to the cluster manager and reset our exponential growth
     if (delta == 0) {
       if (executorIds.size < maxNumExecutorsNeeded) {
+	 client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "LAMBDA")
          client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount, "VM")
       }
       numExecutorsToAdd = 1
